@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solitaire — WebGames</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="game-layout">
+    <header class="game-header">
+      <a href="../../" class="back-link">← WebGames</a>
+      <h1>Solitaire</h1>
+      <div class="header-stats">
+        <div class="stat">
+          <span class="stat-label">Time</span>
+          <span class="stat-value" id="time">0:00</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Moves</span>
+          <span class="stat-value" id="moves">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Score</span>
+          <span class="stat-value" id="score">0</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn" id="btn-draw-mode" title="Toggle draw count">Draw 1</button>
+        <button class="btn btn--primary" id="btn-new">New Game</button>
+      </div>
+    </header>
+
+    <div class="board-wrapper">
+      <div class="board" id="board"></div>
+    </div>
+
+    <div class="overlay overlay--hidden" id="win-overlay">
+      <div class="overlay-content">
+        <div class="win-trophy">♠ ♥ ♦ ♣</div>
+        <h2>You Won!</h2>
+        <p><span id="win-summary">Nicely played.</span></p>
+        <button class="btn btn--primary" id="btn-win-new">Deal Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="solitaire.js"></script>
+</body>
+</html>

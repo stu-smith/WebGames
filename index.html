@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebGames</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow bg-glow--1"></div>
+  <div class="bg-glow bg-glow--2"></div>
+
+  <header class="site-header">
+    <div class="logo">
+      <span class="logo-icon">◆</span>
+      <h1>WebGames</h1>
+    </div>
+    <p class="tagline">Classic games, reimagined in your browser</p>
+  </header>
+
+  <main class="games-grid">
+    <a href="games/tetris/" class="game-tile game-tile--tetris">
+      <div class="game-tile__preview">
+        <div class="tetris-preview">
+          <div class="tetris-block tetris-block--cyan"></div>
+          <div class="tetris-block tetris-block--purple"></div>
+          <div class="tetris-block tetris-block--orange"></div>
+          <div class="tetris-block tetris-block--green"></div>
+        </div>
+      </div>
+      <div class="game-tile__info">
+        <h2>Tetris</h2>
+        <p>Stack glowing 3D blocks in this classic puzzle</p>
+        <span class="game-tile__cta">Play now →</span>
+      </div>
+    </a>
+
+    <a href="games/solitaire/" class="game-tile game-tile--solitaire">
+      <div class="game-tile__preview">
+        <div class="solitaire-preview">
+          <div class="mini-card mini-card--1"><span class="mini-card__rank">A</span><span class="mini-card__suit mini-card__suit--black">♠</span></div>
+          <div class="mini-card mini-card--2"><span class="mini-card__rank mini-card__rank--red">K</span><span class="mini-card__suit mini-card__suit--red">♥</span></div>
+          <div class="mini-card mini-card--3"><span class="mini-card__rank">Q</span><span class="mini-card__suit mini-card__suit--black">♣</span></div>
+          <div class="mini-card mini-card--4"><span class="mini-card__rank mini-card__rank--red">J</span><span class="mini-card__suit mini-card__suit--red">♦</span></div>
+        </div>
+      </div>
+      <div class="game-tile__info">
+        <h2>Solitaire</h2>
+        <p>Deal, stack, and cascade in classic Klondike</p>
+        <span class="game-tile__cta">Play now →</span>
+      </div>
+    </a>
+
+    <div class="game-tile game-tile--coming-soon">
+      <div class="game-tile__preview">
+        <div class="coming-soon-icon">?</div>
+      </div>
+      <div class="game-tile__info">
+        <h2>More Games</h2>
+        <p>New titles coming soon</p>
+        <span class="game-tile__badge">Coming Soon</span>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Built for fun — no installs, no accounts, just play.</p>
+  </footer>
+</body>
+</html>

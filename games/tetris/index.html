@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tetris — WebGames</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="game-layout">
+    <header class="game-header">
+      <a href="../../" class="back-link">← WebGames</a>
+      <h1>Tetris</h1>
+    </header>
+
+    <div class="game-container">
+      <aside class="hud hud--left">
+        <div class="hud-panel">
+          <span class="hud-label">Score</span>
+          <span class="hud-value" id="score">0</span>
+        </div>
+        <div class="hud-panel">
+          <span class="hud-label">Level</span>
+          <span class="hud-value" id="level">1</span>
+        </div>
+        <div class="hud-panel">
+          <span class="hud-label">Lines</span>
+          <span class="hud-value" id="lines">0</span>
+        </div>
+      </aside>
+
+      <div class="canvas-wrapper">
+        <canvas id="game-canvas"></canvas>
+        <div class="overlay" id="start-overlay">
+          <div class="overlay-content">
+            <h2>3D Tetris</h2>
+            <p>Stack the glowing blocks. Clear lines to score.</p>
+            <button class="btn-start" id="btn-start">Start Game</button>
+          </div>
+        </div>
+        <div class="overlay overlay--hidden" id="gameover-overlay">
+          <div class="overlay-content">
+            <h2>Game Over</h2>
+            <p>Final Score: <strong id="final-score">0</strong></p>
+            <button class="btn-start" id="btn-restart">Play Again</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="hud hud--right">
+        <div class="hud-panel hud-panel--next">
+          <span class="hud-label">Next</span>
+          <canvas id="next-canvas" width="120" height="120"></canvas>
+        </div>
+        <div class="controls-panel">
+          <span class="hud-label">Controls</span>
+          <ul>
+            <li><kbd>←</kbd><kbd>→</kbd> Move</li>
+            <li><kbd>↑</kbd> Rotate</li>
+            <li><kbd>↓</kbd> Soft drop</li>
+            <li><kbd>Space</kbd> Hard drop</li>
+            <li><kbd>P</kbd> Pause</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="tetris.js"></script>
+</body>
+</html>

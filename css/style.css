@@ -324,6 +324,43 @@ a.game-tile--snake:hover {
   border-color: rgba(34, 197, 94, 0.35);
 }
 
+.game-tile--arrows .game-tile__preview {
+  background: linear-gradient(160deg, rgba(0, 229, 255, 0.08) 0%, rgba(236, 72, 153, 0.08) 100%);
+}
+
+.arrows-preview {
+  display: grid;
+  grid-template-columns: repeat(2, 56px);
+  grid-template-rows: repeat(2, 56px);
+  gap: 8px;
+}
+
+.arrow-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.9rem;
+  font-weight: 700;
+  border-radius: 10px;
+  color: #0a0a12;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.35s ease;
+}
+
+.arrow-chip--1 { background: linear-gradient(135deg, #00e5ff, #0099cc); }
+.arrow-chip--2 { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+.arrow-chip--3 { background: linear-gradient(135deg, #22c55e, #16a34a); }
+.arrow-chip--4 { background: linear-gradient(135deg, #f97316, #ea580c); }
+
+a.game-tile--arrows:hover .arrow-chip--1 { transform: translateX(8px); }
+a.game-tile--arrows:hover .arrow-chip--2 { transform: translate(6px, 6px); }
+a.game-tile--arrows:hover .arrow-chip--3 { transform: translateY(-8px); }
+a.game-tile--arrows:hover .arrow-chip--4 { transform: translate(-6px, -6px); }
+
+a.game-tile--arrows:hover {
+  border-color: rgba(236, 72, 153, 0.35);
+}
+
 .coming-soon-icon {
   font-size: 3rem;
   font-weight: 300;

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arrows — WebGames</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="game-layout">
+    <header class="game-header">
+      <a href="../../" class="back-link">← WebGames</a>
+      <h1>Arrows</h1>
+
+      <div class="size-picker" id="size-picker">
+        <span class="size-picker__label">Size</span>
+        <input type="range" id="size-range" class="size-range" min="10" max="50" step="1" value="12">
+        <span class="size-picker__value" id="size-value">12 × 12</span>
+      </div>
+
+      <label class="hints-toggle" title="Highlight safe (green) and unsafe (red) arrows on hover">
+        <input type="checkbox" id="hints-toggle">
+        <span>Hints</span>
+      </label>
+
+      <button class="tool-btn" id="btn-undo" disabled>Undo</button>
+      <button class="tool-btn tool-btn--primary" id="btn-new">New Game</button>
+    </header>
+
+    <main class="game-container">
+      <div class="stat-bar">
+        <span class="stat"><span class="stat__label">Cleared</span><span class="stat__value" id="stat-cleared">0</span></span>
+        <span class="stat"><span class="stat__label">Left</span><span class="stat__value" id="stat-left">0</span></span>
+        <span class="stat"><span class="stat__label">Moves</span><span class="stat__value" id="stat-moves">0</span></span>
+      </div>
+
+      <div class="board-wrap">
+        <svg id="board" class="board" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+
+      <p class="hint-text">Click an arrow to fire it off the board. But it only escapes
+        if nothing blocks its path — hit another arrow and you lose.</p>
+    </main>
+  </div>
+
+  <div class="overlay overlay--hidden" id="end-overlay">
+    <div class="overlay-content">
+      <h2 id="end-title">Cleared!</h2>
+      <p id="end-message"></p>
+      <div class="end-stats" id="end-stats"></div>
+      <div class="overlay-actions">
+        <button class="tool-btn" id="btn-undo-overlay">Undo Last Move</button>
+        <button class="btn-start" id="btn-play-again">New Game</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="arrows.js"></script>
+</body>
+</html>

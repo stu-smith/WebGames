@@ -12,7 +12,27 @@ const TURN_RATE = 0.14;       // max heading change per frame (radians)
 const AI_NAMES = [
   'Viper', 'Slinky', 'Coil', 'Fang', 'Noodle', 'Python',
   'Mamba', 'Wriggle', 'Boa', 'Zigzag', 'Hiss', 'Sidewind',
+  'Sir Slithers', 'Danger Noodle', 'Spaghetti', 'Wormtongue',
+  'Nope Rope', 'Belt', 'Shoelace', 'Legless', 'Mr Bendy',
+  'Cuddles', 'Snek', 'Anacondom', 'Hisstopher', 'Slitherin',
+  'Long Boi', 'Tube Sock', 'Garden Hose', 'Squiggles', 'Ziggy',
+  'Fettuccine', 'Linguine', 'Wiggler', 'Coily', 'Slippy',
+  'Basil', 'Monty', 'Kaa', 'Nagini', 'Ssssteve', 'Ssssusan',
+  'The Constrictor', 'Rattles', 'Cobra Kai', 'Slidey McSlideface',
+  'Twister', 'Pretzel', 'Slink Floyd', 'Serpentina', 'Wigglesworth',
+  'Danger Dave', 'Loops', 'Curly', 'Vermicelli', 'Tangle',
+  'Hissy Fit', 'No Legs McGee', 'Slippery Pete', 'Bendy Wendy',
+  'Rope', 'Cable', 'Zippy', 'Slidewinder', 'Meander',
+  'Sinewave', 'Ribbon', 'Snakey McSnakeface', 'Elvis Pastly',
 ];
+
+// Pick a name not currently used by a living snake, so no duplicates on screen.
+function pickName() {
+  const taken = new Set(snakes.filter((s) => s.alive).map((s) => s.name));
+  const free = AI_NAMES.filter((n) => !taken.has(n));
+  const pool = free.length ? free : AI_NAMES;
+  return pool[Math.floor(rand(0, pool.length))];
+}
 
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
@@ -157,7 +177,7 @@ function reset() {
   snakes.push(player);
 
   for (let i = 0; i < AI_COUNT; i++) {
-    snakes.push(spawnSnake(false, AI_NAMES[i % AI_NAMES.length], rand(0, 360)));
+    snakes.push(spawnSnake(false, pickName(), rand(0, 360)));
   }
 
   for (let i = 0; i < FOOD_TARGET; i++) spawnFood();
@@ -353,7 +373,7 @@ function respawnAI() {
     // Remove a dead AI slot and add a fresh one.
     const idx = snakes.findIndex((s) => !s.isPlayer && !s.alive);
     if (idx >= 0) snakes.splice(idx, 1);
-    snakes.push(spawnSnake(false, AI_NAMES[Math.floor(rand(0, AI_NAMES.length))], rand(0, 360)));
+    snakes.push(spawnSnake(false, pickName(), rand(0, 360)));
   }
 }
 
@@ -461,18 +481,35 @@ function render() {
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  // Food.
+  // Food — neon orbs with a fuzzy glow.
   const t = performance.now() * 0.004;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
   for (const item of food) {
     const fx = item.x * v.zoom + v.ox;
     const fy = item.y * v.zoom + v.oy;
-    if (fx < -20 || fx > W + 20 || fy < -20 || fy > H + 20) continue;
-    const pr = (item.r + Math.sin(t + item.pulse) * 0.8) * v.zoom;
+    if (fx < -40 || fx > W + 40 || fy < -40 || fy > H + 40) continue;
+    const pulse = Math.sin(t + item.pulse);
+    const pr = (item.r + pulse * 0.8) * v.zoom;
+    const glow = pr * (3.2 + pulse * 0.4);
+
+    // Soft fuzzy halo built from a radial gradient.
+    const grad = ctx.createRadialGradient(fx, fy, 0, fx, fy, glow);
+    grad.addColorStop(0, `hsla(${item.hue}, 95%, 70%, 0.9)`);
+    grad.addColorStop(0.25, `hsla(${item.hue}, 95%, 60%, 0.5)`);
+    grad.addColorStop(1, `hsla(${item.hue}, 95%, 55%, 0)`);
+    ctx.beginPath();
+    ctx.arc(fx, fy, glow, 0, TAU);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Bright neon core.
     ctx.beginPath();
     ctx.arc(fx, fy, pr, 0, TAU);
-    ctx.fillStyle = `hsl(${item.hue}, 90%, 62%)`;
+    ctx.fillStyle = `hsl(${item.hue}, 100%, 85%)`;
     ctx.fill();
   }
+  ctx.restore();
 
   // Snakes — others first, player last so it renders on top.
   for (const s of snakes) {

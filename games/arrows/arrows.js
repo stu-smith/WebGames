@@ -68,8 +68,10 @@ function growArrow(head, name, cfg, occupied, region, N, maxLen) {
 
   while (path.length < targetLen) {
     const last = path[path.length - 1];
-    const dirs = shuffle(DIR_LIST.slice());
-    if (path.length === 1) dirs.sort((a, b) => (b === cfg.into) - (a === cfg.into));
+    // The first segment must run straight back from the head (opposite the
+    // arrowhead) so the head is never a bend. If that cell isn't usable the
+    // arrow simply stays a single cell. Later segments may turn freely.
+    const dirs = path.length === 1 ? [cfg.into] : shuffle(DIR_LIST.slice());
 
     let stepped = false;
     for (const d of dirs) {

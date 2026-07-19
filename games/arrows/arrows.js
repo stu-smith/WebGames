@@ -137,6 +137,20 @@ function center(cell) {
   return { cx: (cell.x + 0.5) * U, cy: (cell.y + 0.5) * U };
 }
 
+// The arrowhead triangle at cell-centre `c`, pointing along the arrow's dir.
+function makeHead(arrow, c) {
+  const d = arrow.dir;
+  const px = -d.dy, py = d.dx; // perpendicular
+  const tip = `${c.cx + d.dx * U * 0.5},${c.cy + d.dy * U * 0.5}`;
+  const l = `${c.cx + px * U * 0.42 - d.dx * U * 0.14},${c.cy + py * U * 0.42 - d.dy * U * 0.14}`;
+  const r = `${c.cx - px * U * 0.42 - d.dx * U * 0.14},${c.cy - py * U * 0.42 - d.dy * U * 0.14}`;
+  const headEl = document.createElementNS(SVG_NS, 'polygon');
+  headEl.setAttribute('points', `${tip} ${l} ${r}`);
+  headEl.setAttribute('fill', arrow.color.head);
+  headEl.classList.add('arrow__head');
+  return headEl;
+}
+
 function createArrowEl(arrow) {
   const g = document.createElementNS(SVG_NS, 'g');
   g.classList.add('arrow');
@@ -151,26 +165,90 @@ function createArrowEl(arrow) {
   body.setAttribute('points', pts);
   body.setAttribute('fill', 'none');
   body.setAttribute('stroke', arrow.color.body);
-  body.setAttribute('stroke-width', U * 0.6);
+  body.setAttribute('stroke-width', U * 0.42);
   body.setAttribute('stroke-linecap', 'round');
   body.setAttribute('stroke-linejoin', 'round');
   body.classList.add('arrow__body');
   g.appendChild(body);
 
-  // Head: a triangle at the head cell, pointing outward.
-  const { cx, cy } = center(arrow.head);
-  const d = arrow.dir;
-  const px = -d.dy, py = d.dx; // perpendicular
-  const tip = `${cx + d.dx * U * 0.5},${cy + d.dy * U * 0.5}`;
-  const l = `${cx + px * U * 0.42 - d.dx * U * 0.14},${cy + py * U * 0.42 - d.dy * U * 0.14}`;
-  const r = `${cx - px * U * 0.42 - d.dx * U * 0.14},${cy - py * U * 0.42 - d.dy * U * 0.14}`;
-  const headEl = document.createElementNS(SVG_NS, 'polygon');
-  headEl.setAttribute('points', `${tip} ${l} ${r}`);
-  headEl.setAttribute('fill', arrow.color.head);
-  headEl.classList.add('arrow__head');
-  g.appendChild(headEl);
-
+  g.appendChild(makeHead(arrow, center(arrow.head)));
   return g;
+}
+
+// Animate an arrow leaving the board: it slides out head-first, the body
+// snaking along its own path, then flies straight off along `dir`.
+//
+// The body is redrawn as a single path — tail → … → head → a straight
+// extension off the board — and a fixed-length dash (the body length) is slid
+// along it via stroke-dashoffset, so the shape "travels" its own route. The
+// arrowhead rides the leading edge of that dash, which is always on the
+// straight extension, so it simply translates along `dir`.
+function animateExit(arrow, done) {
+  const dir = arrow.dir;
+  const cells = arrow.cells; // cells[0] is the head, last is the tail
+  const headC = center(arrow.head);
+  const g = arrow.el;
+  g.style.pointerEvents = 'none';
+  while (g.firstChild) g.removeChild(g.firstChild);
+
+  const bodyLen = (cells.length - 1) * U;
+  const exitCells = dir.dx > 0 ? (game.N - arrow.head.x)
+    : dir.dx < 0 ? (arrow.head.x + 1)
+    : dir.dy > 0 ? (game.N - arrow.head.y)
+    : (arrow.head.y + 1);
+  const exitLen = exitCells * U + bodyLen + U;
+  const totalLen = bodyLen + exitLen;
+  const ease = 'cubic-bezier(0.45, 0, 0.7, 0.25)';
+  const dur = Math.min(0.75, 0.32 + (exitCells * U) / (game.N * U) * 0.5);
+
+  const finishOnce = (() => {
+    let done_ = false;
+    return () => { if (!done_) { done_ = true; done(); } };
+  })();
+  g.addEventListener('transitionend', finishOnce, { once: true });
+  setTimeout(finishOnce, dur * 1000 + 140);
+
+  const endTransform = `translate(${dir.dx * totalLen}px, ${dir.dy * totalLen}px)`;
+
+  if (bodyLen === 0) {
+    // Single cell — nothing to snake, just fly straight out.
+    const head = makeHead(arrow, headC);
+    head.style.transform = 'translate(0px, 0px)';
+    g.appendChild(head);
+    void g.getBoundingClientRect(); // commit the start state
+    head.style.transition = `transform ${dur}s ${ease}`;
+    head.style.transform = endTransform;
+    return;
+  }
+
+  const tailToHead = [...cells].reverse().map(center);
+  const exitPt = { cx: headC.cx + dir.dx * exitLen, cy: headC.cy + dir.dy * exitLen };
+  const d = 'M ' + [...tailToHead, exitPt].map(p => `${p.cx} ${p.cy}`).join(' L ');
+
+  const path = document.createElementNS(SVG_NS, 'path');
+  path.setAttribute('d', d);
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', arrow.color.body);
+  path.setAttribute('stroke-width', U * 0.42);
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('stroke-linejoin', 'round');
+  path.setAttribute('stroke-dasharray', `${bodyLen} ${totalLen + bodyLen}`);
+  path.style.strokeDashoffset = '0';
+  g.appendChild(path);
+
+  const head = makeHead(arrow, headC);
+  head.style.transform = 'translate(0px, 0px)';
+  g.appendChild(head);
+
+  // Force a reflow so the browser paints the start state before we set the
+  // transition targets — otherwise it coalesces both into one frame and the
+  // arrow just jumps to (i.e. vanishes at) the end.
+  void g.getBoundingClientRect();
+
+  path.style.transition = `stroke-dashoffset ${dur}s ${ease}`;
+  path.style.strokeDashoffset = `${-totalLen}`;
+  head.style.transition = `transform ${dur}s ${ease}`;
+  head.style.transform = endTransform;
 }
 
 // ---------------------------------------------------------------------------
@@ -279,28 +357,21 @@ function attemptRemove(arrow) {
 function fireOff(arrow) {
   game.busy = true;
   arrow.el.classList.remove('arrow--safe', 'arrow--danger');
-  arrow.el.classList.add('arrow--firing');
 
-  // Free its cells and update model immediately.
+  // Free its cells and update the model immediately.
   for (const c of arrow.cells) game.occupied[c.y][c.x] = -1;
   game.arrows.delete(arrow.id);
   game.moves++;
   game.cleared++;
   game.history.push(arrow);
 
-  // Slide the whole arrow off the board in its heading direction.
-  const dist = (game.N + 1) * U;
-  arrow.el.style.transform = `translate(${arrow.dir.dx * dist}px, ${arrow.dir.dy * dist}px)`;
-
-  const finish = () => {
+  animateExit(arrow, () => {
     arrow.el.remove();
     game.busy = false;
     updateStats();
     if (game.arrows.size === 0) win();
     else if (isDeadlocked()) deadlock();
-  };
-  arrow.el.addEventListener('transitionend', finish, { once: true });
-  setTimeout(finish, 500); // fallback if transitionend doesn't fire
+  });
 }
 
 function crash(arrow, blocker) {

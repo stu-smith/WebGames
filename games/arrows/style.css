@@ -234,11 +234,6 @@ body {
 .arrow--danger .arrow__body { filter: drop-shadow(0 0 6px #ef4444) brightness(1.1); }
 .arrow--danger .arrow__head { filter: drop-shadow(0 0 6px #ef4444) brightness(1.1); }
 
-.arrow--firing {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .arrow--crash .arrow__body,
 .arrow--crash .arrow__head {
   fill: #ef4444 !important;

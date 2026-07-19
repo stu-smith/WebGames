@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wordle — WebGames</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="game-layout">
+    <header class="game-header">
+      <a href="../../" class="back-link">← WebGames</a>
+      <h1>Wordle</h1>
+      <button class="new-game-btn" id="btn-new">New Game</button>
+    </header>
+
+    <main class="game-container">
+      <div class="board" id="board"></div>
+
+      <div class="keyboard" id="keyboard"></div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="overlay overlay--hidden" id="end-overlay">
+    <div class="overlay-content">
+      <h2 id="end-title">Nice!</h2>
+      <p id="end-message"></p>
+      <div class="end-stats" id="end-stats"></div>
+      <button class="btn-start" id="btn-play-again">Play Again</button>
+    </div>
+  </div>
+
+  <script type="module" src="wordle.js"></script>
+</body>
+</html>

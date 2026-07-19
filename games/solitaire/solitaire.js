@@ -396,8 +396,9 @@
     const loc = findCard(id);
     if (!loc) return;
 
-    // Stock cards: only the top responds, and via click (handled below).
-    if (loc.kind === 'stock') return;
+    // Stock cards cover the stock slot, so its click handler never fires.
+    // Treat a press on any stock card as a deal.
+    if (loc.kind === 'stock') { onStockClick(); return; }
 
     const card = loc.pile[loc.idx];
     if (!card.faceUp) return;

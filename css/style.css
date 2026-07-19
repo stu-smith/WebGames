@@ -275,6 +275,55 @@ a.game-tile--wordle:hover {
   border-color: rgba(34, 197, 94, 0.35);
 }
 
+.game-tile--snake .game-tile__preview {
+  background: linear-gradient(160deg, rgba(34, 197, 94, 0.08) 0%, rgba(0, 229, 255, 0.08) 100%);
+}
+
+.snake-preview {
+  position: relative;
+  width: 160px;
+  height: 90px;
+}
+
+.snake-seg {
+  position: absolute;
+  top: 50%;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  transition: transform 0.35s ease, left 0.35s ease;
+}
+
+.snake-seg--1    { left: 4px;   background: #16a34a; }
+.snake-seg--2    { left: 26px;  background: #1cb552; }
+.snake-seg--3    { left: 48px;  background: #22c55e; }
+.snake-seg--head {
+  left: 72px;
+  background: #34e56b;
+  box-shadow: 0 0 18px rgba(52, 229, 107, 0.7);
+}
+
+.snake-orb {
+  position: absolute;
+  top: 30%;
+  left: 128px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #00e5ff;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.8);
+}
+
+a.game-tile--snake:hover .snake-seg--1    { left: 10px; }
+a.game-tile--snake:hover .snake-seg--2    { left: 32px; transform: translateY(-90%); }
+a.game-tile--snake:hover .snake-seg--3    { left: 54px; }
+a.game-tile--snake:hover .snake-seg--head { left: 78px; transform: translateY(-20%); }
+
+a.game-tile--snake:hover {
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
 .coming-soon-icon {
   font-size: 3rem;
   font-weight: 300;

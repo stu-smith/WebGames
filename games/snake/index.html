@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Arena — WebGames</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+
+  <a href="../../" class="back-link">← WebGames</a>
+
+  <div class="hud" id="hud">
+    <div class="hud-panel">
+      <span class="hud-label">Length</span>
+      <span class="hud-value" id="stat-length">0</span>
+    </div>
+    <div class="hud-panel">
+      <span class="hud-label">Rank</span>
+      <span class="hud-value" id="stat-rank">–</span>
+    </div>
+  </div>
+
+  <div class="leaderboard" id="leaderboard">
+    <span class="leaderboard__title">Leaderboard</span>
+    <ol id="leaderboard-list"></ol>
+  </div>
+
+  <canvas id="minimap" width="160" height="160"></canvas>
+
+  <div class="overlay" id="start-overlay">
+    <div class="overlay-content">
+      <h2>Snake Arena</h2>
+      <p>Steer with your mouse. Eat glowing orbs to grow. Cut off rival
+         snakes to make them crash — then feast on the remains. Don't run
+         into anyone else.</p>
+      <div class="hint-row">
+        <span><kbd>Move mouse</kbd> Steer</span>
+        <span><kbd>Hold click / Space</kbd> Boost</span>
+      </div>
+      <button class="btn-start" id="btn-start">Enter Arena</button>
+    </div>
+  </div>
+
+  <div class="overlay overlay--hidden" id="gameover-overlay">
+    <div class="overlay-content">
+      <h2>You Got Eaten</h2>
+      <div class="end-stats">
+        <div class="end-stat">
+          <span class="end-stat__value" id="final-length">0</span>
+          <span class="end-stat__label">Length</span>
+        </div>
+        <div class="end-stat">
+          <span class="end-stat__value" id="final-rank">–</span>
+          <span class="end-stat__label">Best Rank</span>
+        </div>
+      </div>
+      <button class="btn-start" id="btn-restart">Play Again</button>
+    </div>
+  </div>
+
+  <script type="module" src="snake.js"></script>
+</body>
+</html>

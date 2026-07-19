@@ -334,7 +334,8 @@ body {
 .card.dragging {
   transition: none;
   cursor: grabbing;
-  z-index: 9999 !important;
+  /* z-index is set per-card in JS (10000 + i) to keep the dragged stack in
+     order; don't override it here with !important. */
 }
 .card.dragging .card__front {
   box-shadow:

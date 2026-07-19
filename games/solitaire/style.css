@@ -261,7 +261,7 @@ body {
 /* Face cards */
 .card__face-art {
   position: absolute;
-  inset: calc(var(--card-w) * 0.12);
+  inset: calc(var(--card-w) * 0.06);
   border-radius: calc(var(--card-radius) * 0.7);
   border: 1.5px solid currentColor;
   display: flex;

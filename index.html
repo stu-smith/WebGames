@@ -1,9 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6LNMJ1V5Q6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6LNMJ1V5Q6');
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebGames</title>
+  <title>Neon Gaming</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -13,13 +21,14 @@
   <div class="bg-grid"></div>
   <div class="bg-glow bg-glow--1"></div>
   <div class="bg-glow bg-glow--2"></div>
+  <div class="bg-glow bg-glow--3"></div>
 
   <header class="site-header">
     <div class="logo">
       <span class="logo-icon">◆</span>
-      <h1>WebGames</h1>
+      <h1 class="neon-title" data-text="Neon Gaming">Neon Gaming</h1>
     </div>
-    <p class="tagline">Classic games, reimagined in your browser</p>
+    <p class="tagline">Classic games, lit up in your browser</p>
   </header>
 
   <main class="games-grid">
@@ -118,7 +127,7 @@
   </main>
 
   <footer class="site-footer">
-    <p>Built for fun — no installs, no accounts, just play.</p>
+    <p>Neon Gaming — no installs, no accounts, just play.</p>
   </footer>
 </body>
 </html>

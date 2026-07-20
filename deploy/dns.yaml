@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Route 53 public hosted zone for the static site. Deploy this FIRST, then point
+  your domain registrar at the four name servers shown in the outputs. Once the
+  delegation has propagated, deploy site.yaml.
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: neongaming.net
+    Description: Apex/root domain name (no www, no trailing dot).
+
+Resources:
+  HostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name: !Ref DomainName
+
+Outputs:
+  HostedZoneId:
+    Description: Route 53 hosted zone ID (feed this into site.yaml).
+    Value: !Ref HostedZone
+    Export:
+      Name: !Sub '${AWS::StackName}-HostedZoneId'
+  NameServers:
+    Description: Set these four name servers at your domain registrar.
+    Value: !Join [' | ', !GetAtt HostedZone.NameServers]

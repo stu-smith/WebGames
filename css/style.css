@@ -54,7 +54,7 @@ body {
 .bg-glow--1 {
   width: 500px;
   height: 500px;
-  background: rgba(0, 229, 255, 0.12);
+  background: rgba(0, 229, 255, 0.18);
   top: -150px;
   right: -100px;
 }
@@ -62,9 +62,18 @@ body {
 .bg-glow--2 {
   width: 400px;
   height: 400px;
-  background: rgba(168, 85, 247, 0.1);
+  background: rgba(236, 72, 153, 0.16);
   bottom: -100px;
   left: -100px;
+}
+
+.bg-glow--3 {
+  width: 420px;
+  height: 420px;
+  background: rgba(168, 85, 247, 0.14);
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .site-header {
@@ -83,24 +92,59 @@ body {
 
 .logo-icon {
   font-size: 1.5rem;
-  color: var(--accent-cyan);
-  filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.6));
+  color: var(--accent-pink);
+  filter: drop-shadow(0 0 12px rgba(236, 72, 153, 0.9));
+  animation: neon-flicker 4.5s infinite alternate;
 }
 
 .logo h1 {
-  font-size: 2.5rem;
+  font-size: clamp(2.5rem, 8vw, 4rem);
   font-weight: 700;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-cyan) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  letter-spacing: 0.04em;
+}
+
+.neon-title {
+  position: relative;
+  color: #fdf4ff;
+  text-shadow:
+    0 0 4px rgba(255, 255, 255, 0.9),
+    0 0 11px var(--accent-cyan),
+    0 0 22px var(--accent-cyan),
+    0 0 38px var(--accent-pink),
+    0 0 62px var(--accent-pink);
+  animation: neon-flicker 6s infinite alternate;
+}
+
+@keyframes neon-flicker {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% {
+    opacity: 1;
+    text-shadow:
+      0 0 4px rgba(255, 255, 255, 0.9),
+      0 0 11px var(--accent-cyan),
+      0 0 22px var(--accent-cyan),
+      0 0 38px var(--accent-pink),
+      0 0 62px var(--accent-pink);
+    filter: drop-shadow(0 0 12px rgba(236, 72, 153, 0.9));
+  }
+  20%, 24%, 55% {
+    opacity: 0.75;
+    text-shadow: none;
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-icon,
+  .neon-title {
+    animation: none;
+  }
 }
 
 .tagline {
   color: var(--text-muted);
   font-size: 1.1rem;
   font-weight: 300;
+  letter-spacing: 0.02em;
 }
 
 .games-grid {
@@ -109,7 +153,7 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 2rem;
-  max-width: 900px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 2rem;
 }

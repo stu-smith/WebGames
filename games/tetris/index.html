@@ -16,8 +16,46 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../../css/flyout.css">
 </head>
 <body>
+  <aside class="flyout" id="flyout">
+    <div class="flyout__panel" role="region" aria-label="How to play Tetris">
+      <span class="flyout__eyebrow">How to Play</span>
+      <h2>Tetris</h2>
+      <p><strong>Tetris</strong> is the classic falling-block puzzle game. Seven
+        differently shaped pieces (called <em>tetrominoes</em>) drop one at a
+        time into the playfield. Move and rotate each piece as it falls to build
+        solid, gap-free rows.</p>
+      <p>Every time you fill a complete horizontal line it clears and your score
+        goes up. Clear several lines at once for a bigger bonus. The game speeds
+        up as you level up — if the stack reaches the top, it's game over.</p>
+
+      <div class="flyout__divider"></div>
+      <h3>Controls</h3>
+      <ul class="flyout__controls">
+        <li><span class="keys"><kbd>←</kbd><kbd>→</kbd></span><span class="action">Move piece left / right</span></li>
+        <li><span class="keys"><kbd>↑</kbd></span><span class="action">Rotate piece</span></li>
+        <li><span class="keys"><kbd>↓</kbd></span><span class="action">Soft drop (fall faster)</span></li>
+        <li><span class="keys"><kbd>Space</kbd></span><span class="action">Hard drop (drop instantly)</span></li>
+        <li><span class="keys"><kbd>P</kbd></span><span class="action">Pause / resume</span></li>
+      </ul>
+
+      <div class="flyout__divider"></div>
+      <h3>Tips</h3>
+      <ul class="flyout__tips">
+        <li>Keep the stack flat and avoid leaving deep single-column holes.</li>
+        <li>Save the long I-piece to clear four lines at once for a "Tetris".</li>
+        <li>Use the <strong>Next</strong> preview to plan your placement ahead.</li>
+      </ul>
+    </div>
+    <button class="flyout__tab" type="button" aria-controls="flyout" aria-expanded="false">
+      <span class="flyout__tab-icon">?</span>
+      <span class="flyout__tab-text">How to Play</span>
+    </button>
+  </aside>
+  <div class="flyout__scrim" id="flyout-scrim"></div>
+
   <div class="game-layout">
     <header class="game-header">
       <a href="../../" class="back-link">← WebGames</a>
@@ -86,5 +124,6 @@
   }
   </script>
   <script type="module" src="tetris.js"></script>
+  <script src="../../css/flyout.js"></script>
 </body>
 </html>

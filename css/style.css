@@ -405,6 +405,41 @@ a.game-tile--arrows:hover {
   border-color: rgba(236, 72, 153, 0.35);
 }
 
+/* ---- Bubble Chain Blast preview ---- */
+.game-tile--bubbleblast .game-tile__preview {
+  background: linear-gradient(160deg, rgba(0, 229, 255, 0.08) 0%, rgba(168, 85, 247, 0.09) 100%);
+}
+
+.bubble-preview {
+  display: grid;
+  grid-template-columns: repeat(2, 54px);
+  grid-template-rows: repeat(2, 54px);
+  gap: 10px;
+}
+
+.bubble-orb {
+  border-radius: 50%;
+  box-shadow:
+    inset 0 3px 4px rgba(255, 255, 255, 0.5),
+    inset 0 -5px 8px rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.35s ease;
+}
+
+.bubble-orb--1 { background: radial-gradient(circle at 35% 28%, #7ff4ff, #00e5ff 50%, #0088bb); }
+.bubble-orb--2 { background: radial-gradient(circle at 35% 28%, #d9b8ff, #a855f7 50%, #6d28d9); }
+.bubble-orb--3 { background: radial-gradient(circle at 35% 28%, #ffd08a, #f97316 50%, #d1418a); }
+.bubble-orb--4 { background: radial-gradient(circle at 35% 28%, #7ff4ff, #00e5ff 50%, #0088bb); }
+
+a.game-tile--bubbleblast:hover .bubble-orb--1 { transform: scale(1.15) translate(-3px, -3px); }
+a.game-tile--bubbleblast:hover .bubble-orb--2 { transform: scale(1.15) translate(3px, -3px); }
+a.game-tile--bubbleblast:hover .bubble-orb--3 { transform: scale(1.15) translate(-3px, 3px); }
+a.game-tile--bubbleblast:hover .bubble-orb--4 { transform: scale(1.15) translate(3px, 3px); }
+
+a.game-tile--bubbleblast:hover {
+  border-color: rgba(168, 85, 247, 0.35);
+}
+
 .coming-soon-icon {
   font-size: 3rem;
   font-weight: 300;

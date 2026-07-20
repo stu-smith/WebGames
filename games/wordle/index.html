@@ -16,8 +16,49 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../../css/flyout.css">
 </head>
 <body>
+  <aside class="flyout" id="flyout">
+    <div class="flyout__panel" role="region" aria-label="How to play Wordle">
+      <span class="flyout__eyebrow">How to Play</span>
+      <h2>Wordle</h2>
+      <p><strong>Wordle</strong> is a daily word-guessing game. You have
+        <strong>six tries</strong> to guess a hidden five-letter word. Type any
+        valid five-letter word and press Enter to submit each guess.</p>
+      <p>After every guess the tiles change colour to show how close you were:</p>
+      <ul class="flyout__tips">
+        <li><strong>Green</strong> — the letter is correct and in the right spot.</li>
+        <li><strong>Yellow</strong> — the letter is in the word but the wrong spot.</li>
+        <li><strong>Grey</strong> — the letter is not in the word at all.</li>
+      </ul>
+      <p>Use the clues to narrow down the answer and solve the puzzle before you
+        run out of guesses.</p>
+
+      <div class="flyout__divider"></div>
+      <h3>Controls</h3>
+      <ul class="flyout__controls">
+        <li><span class="keys">Type</span><span class="action">Enter letters (keyboard or on-screen)</span></li>
+        <li><span class="keys"><kbd>Enter</kbd></span><span class="action">Submit your guess</span></li>
+        <li><span class="keys"><kbd>⌫</kbd></span><span class="action">Delete the last letter</span></li>
+        <li><span class="keys">New</span><span class="action">Start a fresh puzzle</span></li>
+      </ul>
+
+      <div class="flyout__divider"></div>
+      <h3>Tips</h3>
+      <ul class="flyout__tips">
+        <li>Open with a word rich in vowels and common letters, like ADIEU or RAISE.</li>
+        <li>Watch the on-screen keyboard colours to rule out letters fast.</li>
+        <li>Don't waste guesses on letters you've already marked grey.</li>
+      </ul>
+    </div>
+    <button class="flyout__tab" type="button" aria-controls="flyout" aria-expanded="false">
+      <span class="flyout__tab-icon">?</span>
+      <span class="flyout__tab-text">How to Play</span>
+    </button>
+  </aside>
+  <div class="flyout__scrim" id="flyout-scrim"></div>
+
   <div class="game-layout">
     <header class="game-header">
       <a href="../../" class="back-link">← WebGames</a>
@@ -44,5 +85,6 @@
   </div>
 
   <script type="module" src="wordle.js"></script>
+  <script src="../../css/flyout.js"></script>
 </body>
 </html>

@@ -16,8 +16,46 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../../css/flyout.css">
 </head>
 <body>
+  <aside class="flyout" id="flyout">
+    <div class="flyout__panel" role="region" aria-label="How to play Arrows">
+      <span class="flyout__eyebrow">How to Play</span>
+      <h2>Arrows</h2>
+      <p><strong>Arrows</strong> is a board-clearing logic puzzle. The grid is
+        packed with arrows, each pointing in a direction. Click an arrow to
+        <strong>fire it off the board</strong> along the way it points.</p>
+      <p>An arrow only escapes if its path to the edge is <em>completely
+        clear</em>. If another arrow is blocking the way, the shot crashes and
+        you lose. Choose your order carefully to clear every arrow off the
+        board.</p>
+
+      <div class="flyout__divider"></div>
+      <h3>Controls</h3>
+      <ul class="flyout__controls">
+        <li><span class="keys"><kbd>Click</kbd></span><span class="action">Fire the arrow off the board</span></li>
+        <li><span class="keys">Size</span><span class="action">Change the board dimensions</span></li>
+        <li><span class="keys">Hints</span><span class="action">Highlight safe / unsafe arrows on hover</span></li>
+        <li><span class="keys">Undo</span><span class="action">Take back your last move</span></li>
+        <li><span class="keys">New</span><span class="action">Generate a fresh board</span></li>
+      </ul>
+
+      <div class="flyout__divider"></div>
+      <h3>Tips</h3>
+      <ul class="flyout__tips">
+        <li>Arrows on the outer edges are usually safe to fire first.</li>
+        <li>Firing one arrow can open a path for others — plan chains ahead.</li>
+        <li>Turn on Hints while you learn to spot which shots are blocked.</li>
+      </ul>
+    </div>
+    <button class="flyout__tab" type="button" aria-controls="flyout" aria-expanded="false">
+      <span class="flyout__tab-icon">?</span>
+      <span class="flyout__tab-text">How to Play</span>
+    </button>
+  </aside>
+  <div class="flyout__scrim" id="flyout-scrim"></div>
+
   <div class="game-layout">
     <header class="game-header">
       <a href="../../" class="back-link">← WebGames</a>
@@ -67,5 +105,6 @@
   </div>
 
   <script type="module" src="arrows.js"></script>
+  <script src="../../css/flyout.js"></script>
 </body>
 </html>

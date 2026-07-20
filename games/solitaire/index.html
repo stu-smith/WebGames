@@ -16,8 +16,47 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../../css/flyout.css">
 </head>
 <body>
+  <aside class="flyout" id="flyout">
+    <div class="flyout__panel" role="region" aria-label="How to play Solitaire">
+      <span class="flyout__eyebrow">How to Play</span>
+      <h2>Klondike Solitaire</h2>
+      <p><strong>Solitaire</strong> (also known as <em>Klondike</em>) is the
+        classic single-player card game. The goal is to move all 52 cards to the
+        four foundation piles at the top — one pile per suit, built up in order
+        from Ace to King.</p>
+      <p>Cards on the seven tableau columns are stacked <strong>downward in rank
+        and in alternating colours</strong> (a red six on a black seven, and so
+        on). Flip cards from the stock pile when you run out of moves, and free
+        up hidden cards to keep the game flowing.</p>
+
+      <div class="flyout__divider"></div>
+      <h3>Controls</h3>
+      <ul class="flyout__controls">
+        <li><span class="keys"><kbd>Drag</kbd></span><span class="action">Move a card or stack to a new pile</span></li>
+        <li><span class="keys"><kbd>Double&nbsp;click</kbd></span><span class="action">Auto-send a card to its foundation</span></li>
+        <li><span class="keys"><kbd>Click</kbd></span><span class="action">Turn over the stock pile</span></li>
+        <li><span class="keys">Draw&nbsp;1/3</span><span class="action">Toggle how many cards you draw</span></li>
+        <li><span class="keys">New</span><span class="action">Deal a fresh game</span></li>
+      </ul>
+
+      <div class="flyout__divider"></div>
+      <h3>Tips</h3>
+      <ul class="flyout__tips">
+        <li>Always uncover face-down tableau cards as early as you can.</li>
+        <li>Don't rush Aces and Twos up — you may need them to receive cards.</li>
+        <li>Try to empty a column so you have a home for a King.</li>
+      </ul>
+    </div>
+    <button class="flyout__tab" type="button" aria-controls="flyout" aria-expanded="false">
+      <span class="flyout__tab-icon">?</span>
+      <span class="flyout__tab-text">How to Play</span>
+    </button>
+  </aside>
+  <div class="flyout__scrim" id="flyout-scrim"></div>
+
   <div class="game-layout">
     <header class="game-header">
       <a href="../../" class="back-link">← WebGames</a>
@@ -57,5 +96,6 @@
   </div>
 
   <script src="solitaire.js"></script>
+  <script src="../../css/flyout.js"></script>
 </body>
 </html>

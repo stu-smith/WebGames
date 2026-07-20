@@ -16,8 +16,45 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../../css/flyout.css">
 </head>
 <body>
+  <aside class="flyout" id="flyout">
+    <div class="flyout__panel" role="region" aria-label="How to play Snake Arena">
+      <span class="flyout__eyebrow">How to Play</span>
+      <h2>Snake Arena</h2>
+      <p><strong>Snake Arena</strong> is a modern multiplayer-style twist on the
+        classic Snake game. You share a huge neon arena with AI-controlled
+        rival snakes. Glide around eating glowing orbs to grow longer and climb
+        the leaderboard.</p>
+      <p>Cut in front of another snake so its head runs into your body and it
+        crashes — then feast on the trail of orbs it leaves behind. But be
+        careful: if <em>your</em> head hits any snake, you're eaten and it's game
+        over.</p>
+
+      <div class="flyout__divider"></div>
+      <h3>Controls</h3>
+      <ul class="flyout__controls">
+        <li><span class="keys">Move mouse</span><span class="action">Steer your snake's head</span></li>
+        <li><span class="keys"><kbd>Click</kbd></span><span class="action">Hold to boost speed</span></li>
+        <li><span class="keys"><kbd>Space</kbd></span><span class="action">Hold to boost speed</span></li>
+      </ul>
+
+      <div class="flyout__divider"></div>
+      <h3>Tips</h3>
+      <ul class="flyout__tips">
+        <li>Boosting burns length — only sprint when it counts.</li>
+        <li>Encircle smaller snakes to trap them into crashing.</li>
+        <li>Stay near the edges early on to avoid crowded pile-ups.</li>
+      </ul>
+    </div>
+    <button class="flyout__tab" type="button" aria-controls="flyout" aria-expanded="false">
+      <span class="flyout__tab-icon">?</span>
+      <span class="flyout__tab-text">How to Play</span>
+    </button>
+  </aside>
+  <div class="flyout__scrim" id="flyout-scrim"></div>
+
   <canvas id="game-canvas"></canvas>
 
   <a href="../../" class="back-link">← WebGames</a>
@@ -72,5 +109,6 @@
   </div>
 
   <script type="module" src="snake.js"></script>
+  <script src="../../css/flyout.js"></script>
 </body>
 </html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6LNMJ1V5Q6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6LNMJ1V5Q6');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bubble Chain Blast — WebGames</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../../css/flyout.css">
+</head>
+<body>
+  <aside class="flyout" id="flyout">
+    <div class="flyout__panel" role="region" aria-label="How to play Bubble Chain Blast">
+      <span class="flyout__eyebrow">How to Play</span>
+      <h2>Bubble Chain Blast</h2>
+      <p><strong>Bubble Chain Blast</strong> is a chain-reaction puzzle. Every level is
+        packed with bubbles, each holding a number of dots. Tap a bubble to add a
+        dot. When a bubble fills up it <strong>bursts</strong>, firing sparks in
+        all four directions.</p>
+      <p>Each spark flies until it strikes the next bubble in its path, adding a
+        dot there — which can make that bubble burst too. One good tap can set off
+        a cascade that clears the whole board. Wipe out every bubble before you
+        run out of taps.</p>
+
+      <div class="flyout__divider"></div>
+      <h3>Controls</h3>
+      <ul class="flyout__controls">
+        <li><span class="keys"><kbd>Click</kbd></span><span class="action">Add a dot to a bubble</span></li>
+        <li><span class="keys">Difficulty</span><span class="action">Bigger, busier boards</span></li>
+        <li><span class="keys">Retry</span><span class="action">Reset the current level</span></li>
+        <li><span class="keys">New</span><span class="action">Generate a fresh level</span></li>
+      </ul>
+
+      <div class="flyout__divider"></div>
+      <h3>Tips</h3>
+      <ul class="flyout__tips">
+        <li>Bubbles already holding three dots burst on the very next tap.</li>
+        <li>Aim for a bubble that will chain into a cluster, not a lone one.</li>
+        <li>Every level is solvable in exactly the taps you're given — plan ahead.</li>
+      </ul>
+    </div>
+    <button class="flyout__tab" type="button" aria-controls="flyout" aria-expanded="false">
+      <span class="flyout__tab-icon">?</span>
+      <span class="flyout__tab-text">How to Play</span>
+    </button>
+  </aside>
+  <div class="flyout__scrim" id="flyout-scrim"></div>
+
+  <div class="game-layout">
+    <header class="game-header">
+      <a href="../../" class="back-link">← WebGames</a>
+      <h1>Bubble Chain Blast</h1>
+
+      <div class="size-picker" id="diff-picker">
+        <span class="size-picker__label">Difficulty</span>
+        <input type="range" id="diff-range" class="size-range" min="1" max="9" step="1" value="1">
+        <span class="size-picker__value" id="diff-value">Level 1</span>
+      </div>
+
+      <button class="tool-btn" id="btn-retry">Retry</button>
+      <button class="tool-btn tool-btn--primary" id="btn-new">New Level</button>
+    </header>
+
+    <main class="game-container">
+      <div class="stat-bar">
+        <span class="stat"><span class="stat__label">Level</span><span class="stat__value" id="stat-level">1</span></span>
+        <span class="stat"><span class="stat__label">Taps Left</span><span class="stat__value" id="stat-taps">0</span></span>
+        <span class="stat"><span class="stat__label">Bubbles</span><span class="stat__value" id="stat-bubbles">0</span></span>
+      </div>
+
+      <div class="board-wrap">
+        <div id="board" class="board"></div>
+      </div>
+
+      <p class="hint-text">Tap a bubble to add a dot. Fill it up and it bursts,
+        firing sparks that set off the bubbles around it.</p>
+    </main>
+  </div>
+
+  <div class="overlay overlay--hidden" id="end-overlay">
+    <div class="overlay-content">
+      <h2 id="end-title">Cleared!</h2>
+      <p id="end-message"></p>
+      <div class="overlay-actions">
+        <button class="tool-btn" id="btn-retry-overlay">Retry Level</button>
+        <button class="btn-start" id="btn-next">Next Level</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="bubbleblast.js"></script>
+  <script src="../../css/flyout.js"></script>
+</body>
+</html>

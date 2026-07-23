@@ -440,6 +440,87 @@ a.game-tile--bubbleblast:hover {
   border-color: rgba(168, 85, 247, 0.35);
 }
 
+/* ---- Neon Flap preview ---- */
+.game-tile--flappy .game-tile__preview {
+  background: linear-gradient(160deg, rgba(0, 229, 255, 0.07) 0%, rgba(236, 72, 153, 0.08) 100%);
+}
+
+.flappy-preview {
+  position: relative;
+  width: 180px;
+  height: 130px;
+}
+
+.flappy-pipe {
+  position: absolute;
+  width: 26px;
+  border-radius: 6px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.flappy-pipe--top {
+  left: 60px;
+  top: 0;
+  height: 38px;
+  background: linear-gradient(180deg, #0099cc, #00e5ff);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.5);
+}
+
+.flappy-pipe--bottom {
+  left: 60px;
+  bottom: 0;
+  height: 44px;
+  background: linear-gradient(0deg, #0099cc, #00e5ff);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.5);
+}
+
+.flappy-pipe--top2 {
+  left: 140px;
+  top: 0;
+  height: 58px;
+  background: linear-gradient(180deg, #7c3aed, #a855f7);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.5);
+}
+
+.flappy-pipe--bottom2 {
+  left: 140px;
+  bottom: 0;
+  height: 24px;
+  background: linear-gradient(0deg, #7c3aed, #a855f7);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.5);
+}
+
+.flappy-bird {
+  position: absolute;
+  top: 58px;
+  left: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #c8f9ff, #00e5ff 55%, #0088bb);
+  box-shadow: 0 0 18px rgba(0, 229, 255, 0.8);
+  transition: transform 0.35s ease;
+}
+
+.flappy-bird::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #0a0a12;
+}
+
+a.game-tile--flappy:hover .flappy-bird {
+  transform: translate(26px, -22px) rotate(-14deg);
+}
+
+a.game-tile--flappy:hover {
+  border-color: rgba(0, 229, 255, 0.35);
+}
+
 .coming-soon-icon {
   font-size: 3rem;
   font-weight: 300;

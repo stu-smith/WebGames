@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6LNMJ1V5Q6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6LNMJ1V5Q6');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Flap — WebGames</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../../css/flyout.css">
+</head>
+<body>
+  <aside class="flyout" id="flyout">
+    <div class="flyout__panel" role="region" aria-label="How to play Neon Flap">
+      <span class="flyout__eyebrow">How to Play</span>
+      <h2>Neon Flap</h2>
+      <p><strong>Neon Flap</strong> is a one-button arcade dodger. Your glowing
+        orb constantly falls — <strong>flap</strong> to pulse upward and thread
+        the gaps between the neon towers scrolling toward you.</p>
+      <p>Clip a tower, the ceiling grid or the ground and it's game over. Each
+        tower you pass scores a point, and the towers speed up and tighten as
+        your score climbs.</p>
+
+      <div class="flyout__divider"></div>
+      <h3>Controls</h3>
+      <ul class="flyout__controls">
+        <li><span class="keys"><kbd>Space</kbd> / <kbd>↑</kbd></span><span class="action">Flap</span></li>
+        <li><span class="keys"><kbd>Click</kbd> / <kbd>Tap</kbd></span><span class="action">Flap</span></li>
+      </ul>
+
+      <div class="flyout__divider"></div>
+      <h3>Tips</h3>
+      <ul class="flyout__tips">
+        <li>Small, frequent taps are easier to control than big rescue flaps.</li>
+        <li>Aim for the centre of the gap — momentum carries you further than you think.</li>
+        <li>Watch the next gap, not the orb. Your eyes should always be one tower ahead.</li>
+      </ul>
+    </div>
+    <button class="flyout__tab" type="button" aria-controls="flyout" aria-expanded="false">
+      <span class="flyout__tab-icon">?</span>
+      <span class="flyout__tab-text">How to Play</span>
+    </button>
+  </aside>
+  <div class="flyout__scrim" id="flyout-scrim"></div>
+
+  <canvas id="game-canvas"></canvas>
+
+  <a href="../../" class="back-link">← WebGames</a>
+
+  <div class="hud">
+    <div class="hud-panel">
+      <span class="hud-label">Score</span>
+      <span class="hud-value" id="stat-score">0</span>
+    </div>
+    <div class="hud-panel">
+      <span class="hud-label">Best</span>
+      <span class="hud-value" id="stat-best">0</span>
+    </div>
+  </div>
+
+  <div class="overlay" id="start-overlay">
+    <div class="overlay-content">
+      <h2>Neon Flap</h2>
+      <p>Flap through the gaps in the neon towers.
+        One button, no mercy — how far can you glide?</p>
+      <div class="hint-row">
+        <span><kbd>Space</kbd> Flap</span>
+        <span><kbd>Click</kbd> Flap</span>
+        <span><kbd>Tap</kbd> Flap</span>
+      </div>
+      <button class="btn-start" id="btn-start">Start Flapping</button>
+    </div>
+  </div>
+
+  <div class="overlay overlay--hidden" id="gameover-overlay">
+    <div class="overlay-content">
+      <h2 id="gameover-title">Crashed!</h2>
+      <p id="gameover-message">The grid claims another orb.</p>
+      <div class="end-stats">
+        <span class="end-stat">
+          <span class="end-stat__value" id="final-score">0</span>
+          <span class="end-stat__label">Score</span>
+        </span>
+        <span class="end-stat">
+          <span class="end-stat__value" id="final-best">0</span>
+          <span class="end-stat__label">Best</span>
+        </span>
+      </div>
+      <button class="btn-start" id="btn-restart">Fly Again</button>
+    </div>
+  </div>
+
+  <script src="flappy.js"></script>
+  <script src="../../css/flyout.js"></script>
+</body>
+</html>

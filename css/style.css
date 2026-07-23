@@ -521,6 +521,65 @@ a.game-tile--flappy:hover {
   border-color: rgba(0, 229, 255, 0.35);
 }
 
+/* ---- Neon Breakout preview ---- */
+.game-tile--breakout .game-tile__preview {
+  background: linear-gradient(160deg, rgba(236, 72, 153, 0.08) 0%, rgba(0, 229, 255, 0.07) 100%);
+}
+
+.breakout-preview {
+  position: relative;
+  width: 180px;
+  height: 130px;
+}
+
+.breakout-brick {
+  position: absolute;
+  width: 52px;
+  height: 18px;
+  border-radius: 5px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+.breakout-brick--1 { left: 5px; top: 0; background: linear-gradient(180deg, #ff6ab8, #d1418a); box-shadow: 0 0 14px rgba(236, 72, 153, 0.45); }
+.breakout-brick--2 { left: 64px; top: 0; background: linear-gradient(180deg, #ff6ab8, #d1418a); box-shadow: 0 0 14px rgba(236, 72, 153, 0.45); }
+.breakout-brick--3 { left: 123px; top: 0; background: linear-gradient(180deg, #ff6ab8, #d1418a); box-shadow: 0 0 14px rgba(236, 72, 153, 0.45); }
+.breakout-brick--4 { left: 5px; top: 25px; background: linear-gradient(180deg, #a855f7, #7c3aed); box-shadow: 0 0 14px rgba(168, 85, 247, 0.45); }
+.breakout-brick--5 { left: 64px; top: 25px; background: linear-gradient(180deg, #a855f7, #7c3aed); box-shadow: 0 0 14px rgba(168, 85, 247, 0.45); }
+.breakout-brick--6 { left: 123px; top: 25px; background: linear-gradient(180deg, #a855f7, #7c3aed); box-shadow: 0 0 14px rgba(168, 85, 247, 0.45); }
+
+.breakout-ball {
+  position: absolute;
+  left: 82px;
+  top: 72px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #c8f9ff, #00e5ff 55%, #0088bb);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.8);
+  transition: transform 0.35s ease;
+}
+
+.breakout-paddle {
+  position: absolute;
+  left: 55px;
+  bottom: 0;
+  width: 70px;
+  height: 12px;
+  border-radius: 100px;
+  background: linear-gradient(180deg, #7ff4ff, #00e5ff 50%, #0088bb);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.6);
+  transition: transform 0.35s ease;
+}
+
+a.game-tile--breakout:hover .breakout-ball { transform: translate(-14px, -46px); }
+a.game-tile--breakout:hover .breakout-paddle { transform: translateX(-16px); }
+a.game-tile--breakout:hover .breakout-brick--5 { transform: scale(1.25); opacity: 0; }
+
+a.game-tile--breakout:hover {
+  border-color: rgba(236, 72, 153, 0.35);
+}
+
 .coming-soon-icon {
   font-size: 3rem;
   font-weight: 300;

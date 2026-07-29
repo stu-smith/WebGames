@@ -20,6 +20,9 @@ const levelR = (lvl) => 1.5 + lvl * 0.5;   // diameter = (3 + level) whole metre
 const START_RADIUS = levelR(0);
 const START_LIVES = 3;
 
+/* selected map/theme: 'city' (neon night city) or 'pirate' (sunny Caribbean isles) */
+let theme = localStorage.getItem('hole-theme') === 'pirate' ? 'pirate' : 'city';
+
 const TIERS = [
   { r: 0,    name: 'Pothole' },
   { r: 2.0,  name: 'Drain' },
@@ -30,6 +33,17 @@ const TIERS = [
   { r: 9.0,  name: 'Abyss' },
   { r: 11.5, name: 'City Ender' },
 ];
+const TIERS_PIRATE = [
+  { r: 0,    name: 'Rock Pool' },
+  { r: 2.0,  name: 'Sand Trap' },
+  { r: 2.9,  name: "Smuggler's Hole" },
+  { r: 4.0,  name: 'Blowhole' },
+  { r: 5.4,  name: 'Devourer' },
+  { r: 7.0,  name: 'Maelstrom' },
+  { r: 9.0,  name: 'Abyss' },
+  { r: 11.5, name: 'Isle Ender' },
+];
+const tiersNow = () => (theme === 'pirate' ? TIERS_PIRATE : TIERS);
 
 const NPC_POOL = [
   { name: 'Gulp',          color: 0xff4fa3 },
@@ -41,6 +55,17 @@ const NPC_POOL = [
   { name: 'Doom Drain',    color: 0xf3ff6b },
   { name: 'Slurp',         color: 0x6bffc9 },
 ];
+const NPC_POOL_PIRATE = [
+  { name: "Cap'n Gulp",       color: 0xff4fa3 },
+  { name: 'Blackhole Beard',  color: 0x8dff57 },
+  { name: 'Davy Sinker',      color: 0xffb347 },
+  { name: 'Jolly Swallower',  color: 0xb26bff },
+  { name: 'Dread Pit Rob',    color: 0xff5c5c },
+  { name: 'Barnacle Bite',    color: 0x57d9ff },
+  { name: 'Salty Gulch',      color: 0xf3ff6b },
+  { name: 'The Kraken',       color: 0x6bffc9 },
+];
+const npcPool = () => (theme === 'pirate' ? NPC_POOL_PIRATE : NPC_POOL);
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const randInt = (a, b) => Math.floor(rand(a, b + 1));
@@ -79,15 +104,65 @@ sun.shadow.camera.near = 20;
 sun.shadow.camera.far = 500;
 sun.shadow.bias = -0.0006;
 scene.add(sun);
-scene.add(new THREE.AmbientLight(0x404060, 0.75));
+const ambient = new THREE.AmbientLight(0x404060, 0.75);
+scene.add(ambient);
 
-/* Sky dome + stars + moon (fog-free backdrop) */
-{
+function applyAtmosphere() {
+  if (theme === 'pirate') {
+    scene.fog.color.setHex(0xbfe2ee);
+    scene.fog.near = 170; scene.fog.far = 540;
+    hemi.color.setHex(0xd6ecff); hemi.groundColor.setHex(0x9a8a60); hemi.intensity = 1.2;
+    sun.color.setHex(0xfff2cf); sun.intensity = 2.7;
+    sun.position.set(150, 230, -150);
+    ambient.color.setHex(0x8a97a5); ambient.intensity = 0.55;
+    renderer.toneMappingExposure = 1.12;
+  } else {
+    scene.fog.color.setHex(0x140f2a);
+    scene.fog.near = 140; scene.fog.far = 460;
+    hemi.color.setHex(0xa89aff); hemi.groundColor.setHex(0x2c3a48); hemi.intensity = 1.35;
+    sun.color.setHex(0xffd9b0); sun.intensity = 2.0;
+    sun.position.set(130, 190, 90);
+    ambient.color.setHex(0x404060); ambient.intensity = 0.75;
+    renderer.toneMappingExposure = 1.3;
+  }
+}
+
+/* remove a themed scene chunk, disposing everything except shared materials */
+function disposeGroup(grp) {
+  grp.traverse((o) => {
+    if (o.geometry) o.geometry.dispose();
+    const m = o.material;
+    if (m && m !== matLit) {
+      if (m.map) m.map.dispose();
+      m.dispose();
+    }
+  });
+  scene.remove(grp);
+}
+
+function radialSpriteTexture(size, stops) {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = size;
+  const c = cv.getContext('2d');
+  const grad = c.createRadialGradient(size / 2, size / 2, size / 16, size / 2, size / 2, size / 2);
+  for (const [t, col] of stops) grad.addColorStop(t, col);
+  c.fillStyle = grad;
+  c.fillRect(0, 0, size, size);
+  return new THREE.CanvasTexture(cv);
+}
+
+/* Sky dome + celestial dressing (fog-free backdrop). City: stars + moon; pirate: sun + clouds. */
+let skyGroup = null;
+function buildSky() {
+  if (skyGroup) disposeGroup(skyGroup);
+  skyGroup = new THREE.Group();
+  const pirate = theme === 'pirate';
+
   const domeGeo = new THREE.SphereGeometry(620, 24, 12);
   const pos = domeGeo.attributes.position;
   const col = new Float32Array(pos.count * 3);
-  const top = new THREE.Color(0x241549);
-  const bottom = new THREE.Color(0x0d0a1c);
+  const top = new THREE.Color(pirate ? 0x2f8fdd : 0x241549);
+  const bottom = new THREE.Color(pirate ? 0xc4e6f4 : 0x0d0a1c);
   const c = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
     const t = clamp(pos.getY(i) / 620, 0, 1);
@@ -99,38 +174,74 @@ scene.add(new THREE.AmbientLight(0x404060, 0.75));
     vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false,
   }));
   dome.renderOrder = -10;
-  scene.add(dome);
+  skyGroup.add(dome);
 
-  const starPos = new Float32Array(260 * 3);
-  for (let i = 0; i < 260; i++) {
-    const a = rand(0, Math.PI * 2);
-    const e = rand(0.12, 1.4);
-    const r2 = 560;
-    starPos[i * 3] = Math.cos(a) * Math.cos(e) * r2;
-    starPos[i * 3 + 1] = Math.sin(e) * r2;
-    starPos[i * 3 + 2] = Math.sin(a) * Math.cos(e) * r2;
+  if (pirate) {
+    const sunSpr = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: radialSpriteTexture(128, [
+        [0, 'rgba(255,255,244,1)'],
+        [0.35, 'rgba(255,244,190,0.9)'],
+        [1, 'rgba(255,236,150,0)'],
+      ]),
+      fog: false, depthWrite: false, transparent: true,
+    }));
+    sunSpr.position.set(260, 230, -420);
+    sunSpr.scale.set(130, 130, 1);
+    skyGroup.add(sunSpr);
+
+    // puffy trade-wind clouds
+    const cloudCv = document.createElement('canvas');
+    cloudCv.width = 256; cloudCv.height = 128;
+    const cc = cloudCv.getContext('2d');
+    for (let i = 0; i < 7; i++) {
+      const x = 40 + rand(0, 176), y = 50 + rand(0, 40), r = rand(18, 38);
+      const grad = cc.createRadialGradient(x, y, 2, x, y, r);
+      grad.addColorStop(0, 'rgba(255,255,255,0.9)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      cc.fillStyle = grad;
+      cc.fillRect(0, 0, 256, 128);
+    }
+    const cloudTex = new THREE.CanvasTexture(cloudCv);
+    for (let i = 0; i < 9; i++) {
+      const spr = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: cloudTex, transparent: true, opacity: rand(0.5, 0.8),
+        fog: false, depthWrite: false,
+      }));
+      const a = rand(0, Math.PI * 2);
+      const r = rand(300, 520);
+      spr.position.set(Math.cos(a) * r, rand(130, 260), Math.sin(a) * r);
+      spr.scale.set(rand(90, 170), rand(32, 58), 1);
+      skyGroup.add(spr);
+    }
+  } else {
+    const starPos = new Float32Array(260 * 3);
+    for (let i = 0; i < 260; i++) {
+      const a = rand(0, Math.PI * 2);
+      const e = rand(0.12, 1.4);
+      const r2 = 560;
+      starPos[i * 3] = Math.cos(a) * Math.cos(e) * r2;
+      starPos[i * 3 + 1] = Math.sin(e) * r2;
+      starPos[i * 3 + 2] = Math.sin(a) * Math.cos(e) * r2;
+    }
+    const stars = new THREE.Points(
+      new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(starPos, 3)),
+      new THREE.PointsMaterial({ color: 0xcdd6ff, size: 2.2, fog: false, sizeAttenuation: false })
+    );
+    skyGroup.add(stars);
+
+    const moon = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: radialSpriteTexture(128, [
+        [0, 'rgba(255,224,244,1)'],
+        [0.42, 'rgba(255,180,226,0.85)'],
+        [1, 'rgba(255,150,210,0)'],
+      ]),
+      fog: false, depthWrite: false, transparent: true,
+    }));
+    moon.position.set(260, 230, -420);
+    moon.scale.set(110, 110, 1);
+    skyGroup.add(moon);
   }
-  const stars = new THREE.Points(
-    new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(starPos, 3)),
-    new THREE.PointsMaterial({ color: 0xcdd6ff, size: 2.2, fog: false, sizeAttenuation: false })
-  );
-  scene.add(stars);
-
-  const moonCanvas = document.createElement('canvas');
-  moonCanvas.width = moonCanvas.height = 128;
-  const mc = moonCanvas.getContext('2d');
-  const grad = mc.createRadialGradient(64, 64, 8, 64, 64, 64);
-  grad.addColorStop(0, 'rgba(255,224,244,1)');
-  grad.addColorStop(0.42, 'rgba(255,180,226,0.85)');
-  grad.addColorStop(1, 'rgba(255,150,210,0)');
-  mc.fillStyle = grad;
-  mc.fillRect(0, 0, 128, 128);
-  const moon = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: new THREE.CanvasTexture(moonCanvas), fog: false, depthWrite: false, transparent: true,
-  }));
-  moon.position.set(260, 230, -420);
-  moon.scale.set(110, 110, 1);
-  scene.add(moon);
+  scene.add(skyGroup);
 }
 
 /* ============================== Audio ============================== */
@@ -187,7 +298,17 @@ function computeDistricts() {
     districtGrid[bx] = [];
     for (let bz = 0; bz < 6; bz++) {
       let d;
-      if ((bx === 2 || bx === 3) && (bz === 2 || bz === 3)) {
+      if (theme === 'pirate') {
+        if ((bx === 2 || bx === 3) && (bz === 2 || bz === 3)) {
+          d = bx === 2 && bz === 2 ? 'cove' : bx === 3 && bz === 2 ? 'lagoon' : bx === 2 ? 'grove' : 'camp';
+        } else if (bx >= 4 && bz <= 2) d = 'wrecks';
+        else if (bx <= 1 && bz <= 2) d = 'village';
+        else if (bx <= 2 && bz >= 4) d = 'market';
+        else if (bx >= 3 && bz >= 4) d = 'fort';
+        else if (bx === 2 && bz === 0) d = 'skull';
+        else if (bx === 3 && bz === 0) d = 'lighthouse';
+        else d = 'jungle';
+      } else if ((bx === 2 || bx === 3) && (bz === 2 || bz === 3)) {
         d = bx === 3 && bz === 3 ? 'plaza' : bx === 3 && bz === 2 ? 'pondpark' : 'park';
       } else if (bx >= 4 && bz <= 2) d = 'downtown';
       else if (bx <= 1 && bz <= 2) d = 'residential';
@@ -206,6 +327,11 @@ const DISTRICT_FILL = {
   downtown: '#4a4a5a', residential: '#417044', commercial: '#564e5c',
   industrial: '#4e4a46', stadium: '#3a8a42', church: '#456a3e', mixed: '#4a4e58',
 };
+const DISTRICT_FILL_PIRATE = {
+  cove: '#dcc68e', lagoon: '#d8c184', grove: '#59923e', camp: '#c9b078',
+  wrecks: '#cbb088', village: '#6a9a48', market: '#d2ba86',
+  fort: '#b3a684', skull: '#a9a291', lighthouse: '#c9b784', jungle: '#4c8038',
+};
 
 function paintGround() {
   const S = 2048 / WORLD;
@@ -215,6 +341,16 @@ function paintGround() {
   const px = (x) => (x + HALF) * S;
   const rect = (x, z, w, h, fill) => { g.fillStyle = fill; g.fillRect(px(x), px(z), w * S, h * S); };
 
+  if (theme === 'pirate') paintPirateGround(g, px, rect, S);
+  else paintCityGround(g, px, rect, S);
+
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return tex;
+}
+
+function paintCityGround(g, px, rect, S) {
   // base: perimeter grass
   g.fillStyle = '#31582c';
   g.fillRect(0, 0, 2048, 2048);
@@ -328,15 +464,122 @@ function paintGround() {
     else if (side === 2) g.fillRect(px(along), px(-HALF), w * S, depth * S);
     else g.fillRect(px(along), px(HALF - depth), w * S, depth * S);
   }
+}
 
-  const tex = new THREE.CanvasTexture(cv);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  return tex;
+function paintPirateGround(g, px, rect, S) {
+  // sun-bleached sand base
+  g.fillStyle = '#d3bc82';
+  g.fillRect(0, 0, 2048, 2048);
+  for (let i = 0; i < 520; i++) {
+    g.fillStyle = `rgba(${randInt(190, 232)},${randInt(165, 205)},${randInt(110, 152)},0.3)`;
+    g.fillRect(px(rand(-HALF, HALF)), px(rand(-HALF, HALF)), rand(2, 10) * S, rand(2, 10) * S);
+  }
+
+  // blocks: district fills, with ragged grassy blobs for the green ones
+  const greens = ['#4c8038', '#59923e', '#3f7231', '#68a24a'];
+  for (let bx = 0; bx < 6; bx++) {
+    for (let bz = 0; bz < 6; bz++) {
+      const cx = BLOCK_CENTERS[bx], cz = BLOCK_CENTERS[bz];
+      const d = districtGrid[bx][bz];
+      rect(cx - 15, cz - 15, 30, 30, DISTRICT_FILL_PIRATE[d]);
+      if (d === 'jungle' || d === 'grove' || d === 'village') {
+        for (let i = 0; i < 26; i++) {
+          g.fillStyle = pick(greens);
+          g.beginPath();
+          g.ellipse(px(cx + rand(-14, 14)), px(cz + rand(-14, 14)),
+            rand(1.5, 4) * S, rand(1.5, 4) * S, rand(0, 3), 0, Math.PI * 2);
+          g.fill();
+        }
+      }
+    }
+  }
+
+  // sandy trails where the roads would be
+  g.fillStyle = '#c2a468';
+  for (const r of ROADS) {
+    g.fillRect(px(r - 3.2), 0, 6.4 * S, 2048);
+    g.fillRect(0, px(r - 3.2), 2048, 6.4 * S);
+  }
+  // cart ruts and footprints along the trails
+  g.fillStyle = 'rgba(140,110,70,0.4)';
+  for (const r of ROADS) {
+    for (let t = -HALF + 3; t < HALF - 3; t += rand(4, 9)) {
+      g.fillRect(px(r + rand(-2.2, 1.8)), px(t), rand(0.4, 1.2) * S, rand(0.4, 1.2) * S);
+      g.fillRect(px(t), px(r + rand(-2.2, 1.8)), rand(0.4, 1.2) * S, rand(0.4, 1.2) * S);
+    }
+  }
+
+  // the lagoon
+  {
+    const cx = BLOCK_CENTERS[3], cz = BLOCK_CENTERS[2];
+    g.fillStyle = '#e6d7a4';
+    g.beginPath(); g.ellipse(px(cx + 1), px(cz - 1), 10.4 * S, 8.2 * S, 0.3, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#2b9fc0';
+    g.beginPath(); g.ellipse(px(cx + 1), px(cz - 1), 9.0 * S, 6.8 * S, 0.3, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#5ecbdc';
+    g.beginPath(); g.ellipse(px(cx - 1), px(cz - 2), 4.8 * S, 3.2 * S, 0.3, 0, Math.PI * 2); g.fill();
+  }
+  // tide pool in the treasure cove
+  {
+    const cx = BLOCK_CENTERS[2], cz = BLOCK_CENTERS[2];
+    g.fillStyle = '#3fb0c8';
+    g.beginPath(); g.ellipse(px(cx - 8), px(cz - 8), 3.4 * S, 2.4 * S, 0.7, 0, Math.PI * 2); g.fill();
+  }
+  // skull rock plateau
+  {
+    const cx = BLOCK_CENTERS[2], cz = BLOCK_CENTERS[0];
+    g.fillStyle = '#9b957f';
+    g.beginPath(); g.ellipse(px(cx), px(cz), 13 * S, 12 * S, 0, 0, Math.PI * 2); g.fill();
+  }
+  // X marks the spot — red crosses dotted around the isles
+  g.strokeStyle = 'rgba(190,40,40,0.85)';
+  g.lineWidth = 1.1 * S;
+  g.lineCap = 'round';
+  const xs = [
+    [BLOCK_CENTERS[2], BLOCK_CENTERS[2]],
+    [rand(-130, -100), rand(90, 120)],
+    [rand(90, 130), rand(-130, -95)],
+  ];
+  for (const [x, z] of xs) {
+    g.beginPath();
+    g.moveTo(px(x - 2), px(z - 2)); g.lineTo(px(x + 2), px(z + 2));
+    g.moveTo(px(x + 2), px(z - 2)); g.lineTo(px(x - 2), px(z + 2));
+    g.stroke();
+  }
+  // shells and starfish freckles
+  for (let i = 0; i < 260; i++) {
+    g.fillStyle = pick(['rgba(250,245,230,0.8)', 'rgba(240,220,200,0.7)', 'rgba(230,140,120,0.6)']);
+    g.fillRect(px(rand(-HALF, HALF)), px(rand(-HALF, HALF)), rand(0.3, 0.7) * S, rand(0.3, 0.7) * S);
+  }
+  // wet-sand shoreline fringe
+  const wets = ['#c2a468', '#b89a5e', '#ccae74'];
+  g.fillStyle = wets[0];
+  const fr = 3.5 * S;
+  g.fillRect(0, 0, 2048, fr);
+  g.fillRect(0, 2048 - fr, 2048, fr);
+  g.fillRect(0, 0, fr, 2048);
+  g.fillRect(2048 - fr, 0, fr, 2048);
+  for (let i = 0; i < 340; i++) {
+    const along = rand(-HALF, HALF);
+    const depth = rand(2, 7.5);
+    const w = rand(2, 6), l = rand(2, 6);
+    g.fillStyle = pick(wets);
+    const side = randInt(0, 3);
+    if (side === 0) g.fillRect(px(-HALF), px(along), depth * S, l * S);
+    else if (side === 1) g.fillRect(px(HALF - depth), px(along), depth * S, l * S);
+    else if (side === 2) g.fillRect(px(along), px(-HALF), w * S, depth * S);
+    else g.fillRect(px(along), px(HALF - depth), w * S, depth * S);
+  }
 }
 
 let ground;
 function buildGround() {
+  if (ground) {
+    ground.geometry.dispose();
+    ground.material.map.dispose();
+    ground.material.dispose();
+    scene.remove(ground);
+  }
   computeDistricts();
   const tex = paintGround();
   const mat = new THREE.MeshLambertMaterial({ map: tex });
@@ -361,7 +604,6 @@ function buildGround() {
   ground.receiveShadow = true;
   scene.add(ground);
 }
-buildGround();
 
 /* ============================== Geometry helpers + prop templates ============================== */
 
@@ -447,19 +689,28 @@ function squareRing(innerS, outerS, innerY, outerY, colInner, colOuter, jitterAm
   return g;
 }
 
+let seaGroup = null;
 function buildSea() {
-  // water surface: two drifting layers of streaky moonlit texture
+  if (seaGroup) disposeGroup(seaGroup);
+  seaGroup = new THREE.Group();
+  const pirate = theme === 'pirate';
+
+  // water surface: two drifting layers of streaky texture (moonlit or turquoise)
   const cv = document.createElement('canvas');
   cv.width = cv.height = 256;
   const g = cv.getContext('2d');
-  g.fillStyle = '#0e2338';
+  g.fillStyle = pirate ? '#1580a0' : '#0e2338';
   g.fillRect(0, 0, 256, 256);
   for (let i = 0; i < 110; i++) {
-    g.fillStyle = `rgba(${randInt(26, 48)},${randInt(80, 125)},${randInt(125, 170)},${rand(0.08, 0.28).toFixed(2)})`;
+    g.fillStyle = pirate
+      ? `rgba(${randInt(60, 105)},${randInt(175, 215)},${randInt(195, 235)},${rand(0.08, 0.28).toFixed(2)})`
+      : `rgba(${randInt(26, 48)},${randInt(80, 125)},${randInt(125, 170)},${rand(0.08, 0.28).toFixed(2)})`;
     g.fillRect(rand(0, 256), rand(0, 256), rand(12, 48), rand(1, 2.5));
   }
   for (let i = 0; i < 30; i++) {
-    g.fillStyle = `rgba(210,228,255,${rand(0.05, 0.15).toFixed(2)})`;
+    g.fillStyle = pirate
+      ? `rgba(245,255,255,${rand(0.08, 0.2).toFixed(2)})`
+      : `rgba(210,228,255,${rand(0.05, 0.15).toFixed(2)})`;
     g.fillRect(rand(0, 256), rand(0, 256), rand(2, 7), 1.2);
   }
   const tex1 = new THREE.CanvasTexture(cv);
@@ -473,44 +724,54 @@ function buildSea() {
   const seaGeo = new THREE.CircleGeometry(600, 48);
   seaGeo.rotateX(-Math.PI / 2);
   const water = new THREE.Mesh(seaGeo, new THREE.MeshLambertMaterial({
-    map: tex1, emissive: 0x0a1626, emissiveIntensity: 0.55,
+    map: tex1,
+    emissive: pirate ? 0x0e4c58 : 0x0a1626,
+    emissiveIntensity: pirate ? 0.5 : 0.55,
   }));
   water.position.y = SEA_LEVEL;
   water.receiveShadow = true;
-  scene.add(water);
+  seaGroup.add(water);
 
   const shimmer = new THREE.Mesh(seaGeo, new THREE.MeshLambertMaterial({
     map: tex2, transparent: true, opacity: 0.35, depthWrite: false,
   }));
   shimmer.position.y = SEA_LEVEL + 0.04;
-  scene.add(shimmer);
+  seaGroup.add(shimmer);
 
   // beach skirt sloping from the ground edge down under the waterline
   const beach = new THREE.Mesh(
-    squareRing(HALF - 1, HALF + 15, -0.03, -3.4, '#cdb67e', '#3e3830', 2.2),
+    pirate
+      ? squareRing(HALF - 1, HALF + 15, -0.03, -3.4, '#e8d8a4', '#2e6a62', 2.2)
+      : squareRing(HALF - 1, HALF + 15, -0.03, -3.4, '#cdb67e', '#3e3830', 2.2),
     new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide })
   );
   beach.receiveShadow = true;
-  scene.add(beach);
+  seaGroup.add(beach);
 
   // surf foam hugging the shoreline (beach slope crosses SEA_LEVEL ~4 units out)
   const foamMat = new THREE.MeshBasicMaterial({
-    color: 0xdfeaff, transparent: true, opacity: 0.3, depthWrite: false,
+    color: pirate ? 0xf4fbff : 0xdfeaff, transparent: true, opacity: 0.3, depthWrite: false,
   });
   const foam = new THREE.Mesh(
     squareRing(HALF + 3.2, HALF + 6.4, SEA_LEVEL + 0.05, SEA_LEVEL + 0.05, '#ffffff', '#ffffff', 0.74),
     foamMat
   );
-  scene.add(foam);
+  seaGroup.add(foam);
 
-  // moon-glitter lane stretching toward the moon
+  // glitter lane stretching toward the moon (city) or the sun (pirate)
   const glCv = document.createElement('canvas');
   glCv.width = glCv.height = 128;
   const gl = glCv.getContext('2d');
   const gr = gl.createRadialGradient(64, 64, 4, 64, 64, 64);
-  gr.addColorStop(0, 'rgba(255,205,235,0.9)');
-  gr.addColorStop(0.5, 'rgba(255,170,220,0.35)');
-  gr.addColorStop(1, 'rgba(255,150,210,0)');
+  if (pirate) {
+    gr.addColorStop(0, 'rgba(255,248,214,0.95)');
+    gr.addColorStop(0.5, 'rgba(255,236,170,0.4)');
+    gr.addColorStop(1, 'rgba(255,225,140,0)');
+  } else {
+    gr.addColorStop(0, 'rgba(255,205,235,0.9)');
+    gr.addColorStop(0.5, 'rgba(255,170,220,0.35)');
+    gr.addColorStop(1, 'rgba(255,150,210,0)');
+  }
   gl.fillStyle = gr;
   gl.fillRect(0, 0, 128, 128);
   const mdir = new THREE.Vector2(260, -420).normalize();
@@ -522,27 +783,30 @@ function buildSea() {
     blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
   }));
   glint.position.set(mdir.x * 300, SEA_LEVEL + 0.08, mdir.y * 300);
-  scene.add(glint);
+  seaGroup.add(glint);
 
-  // small offshore islets, mostly silhouettes in the fog
+  // small offshore islets — mossy silhouettes at night, sandy palm keys in the sun
   const islets = [
     [-250, -120, 10, true], [240, 150, 8, false], [95, -265, 12, true],
     [-190, 235, 7, true], [290, -40, 5.5, false],
   ];
   for (const [x, z, s, treed] of islets) {
+    const rockA = pirate ? '#cfba82' : '#4c5244';
+    const rockB = pirate ? '#dcc890' : '#575e4c';
     const parts = [
-      sph(s, '#4c5244', 0, 0, 0, 0.5),
-      sph(s * 0.6, '#575e4c', s * 0.45, s * 0.06, -s * 0.35, 0.5),
+      sph(s, rockA, 0, 0, 0, 0.5),
+      sph(s * 0.6, rockB, s * 0.45, s * 0.06, -s * 0.35, 0.5),
     ];
     if (treed) {
-      parts.push(cyl(0.22, 0.32, 3, 6, '#5c3f24', 0, s * 0.42 + 1.5, 0));
-      parts.push(sph(1.7, '#2f7a3a', 0, s * 0.42 + 3.4, 0, 0.9));
-      parts.push(sph(1.0, '#3c8a37', 0.9, s * 0.42 + 2.7, 0.4));
+      parts.push(cyl(0.22, 0.32, 3, 6, pirate ? '#8a6a3c' : '#5c3f24', 0, s * 0.42 + 1.5, 0));
+      parts.push(sph(1.7, pirate ? '#3fae4e' : '#2f7a3a', 0, s * 0.42 + 3.4, 0, 0.9));
+      parts.push(sph(1.0, pirate ? '#58c063' : '#3c8a37', 0.9, s * 0.42 + 2.7, 0.4));
     }
     const islet = new THREE.Mesh(mergeGeometries(parts, false), matLit);
     islet.position.set(x, SEA_LEVEL - s * 0.12, z);
-    scene.add(islet);
+    seaGroup.add(islet);
   }
+  scene.add(seaGroup);
 
   updateSea = (time) => {
     tex1.offset.set(time * 0.0065, time * 0.0042);
@@ -553,7 +817,6 @@ function buildSea() {
     foam.scale.setScalar(1 + 0.004 * surge);
   };
 }
-buildSea();
 
 /* window-facade textures for taller buildings */
 function windowTexture(facade, litColors) {
@@ -1084,6 +1347,279 @@ function buildTemplates() {
     g.add(spire);
     return g;
   }, 120);
+
+  /* ===================== pirate-isle props ===================== */
+
+  const palmGreens = ['#3fae4e', '#2f9a44', '#58c063'];
+  const palmFronds = (x, y, count, len) => {
+    const parts = [];
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2 + rand(-0.2, 0.2);
+      const fr = new THREE.SphereGeometry(len, 6, 4);
+      fr.scale(1, 0.16, 0.34);
+      fr.translate(len * 0.75, 0, 0);
+      fr.rotateZ(-rand(0.35, 0.6));
+      fr.rotateY(a);
+      fr.translate(x, y, 0);
+      parts.push(tint(fr, pick(palmGreens)));
+    }
+    return parts;
+  };
+  mergedTemplate('palm', 1.0, () => [
+    cyl(0.16, 0.24, 2.0, 6, '#8a6a3c', 0, 1.0, 0),
+    cyl(0.12, 0.16, 1.7, 6, '#97754a', 0.3, 2.75, 0),
+    sph(0.17, '#5c4322', 0.15, 3.5, 0.18),
+    sph(0.17, '#5c4322', 0.5, 3.45, -0.12),
+    ...palmFronds(0.3, 3.65, 6, 0.95),
+  ]);
+  mergedTemplate('palm-big', 1.45, () => [
+    cyl(0.22, 0.32, 2.4, 7, '#84643a', 0, 1.2, 0),
+    cyl(0.17, 0.22, 2.0, 6, '#8f6d42', 0.35, 3.35, 0),
+    cyl(0.13, 0.17, 1.7, 6, '#97754a', 0.7, 5.1, 0),
+    sph(0.2, '#5c4322', 0.5, 5.85, 0.24),
+    sph(0.2, '#5c4322', 0.95, 5.8, -0.16),
+    ...palmFronds(0.7, 6.0, 7, 1.3),
+  ]);
+
+  mergedTemplate('chest', 0.75, () => [
+    box(1.15, 0.6, 0.78, '#7a4c28', 0, 0.3, 0),
+    box(1.2, 0.22, 0.84, '#8a5a30', 0, 0.68, -0.06),
+    box(0.16, 0.66, 0.8, '#d8ac3c', 0, 0.33, 0),
+    box(1.18, 0.1, 0.16, '#d8ac3c', 0, 0.62, 0.34),
+    sph(0.3, '#ffd24a', 0, 0.72, 0.12, 0.5),
+    sph(0.16, '#ffe98a', -0.3, 0.68, 0.1),
+    sph(0.14, '#ffe98a', 0.28, 0.66, 0.15),
+  ], true, 45);
+
+  mergedTemplate('goldpile', 0.9, () => [
+    sph(0.85, '#e8bc3e', 0, 0.25, 0, 0.42),
+    sph(0.55, '#ffd24a', 0.25, 0.5, 0.15, 0.5),
+    sph(0.35, '#ffe07a', -0.3, 0.55, -0.2, 0.6),
+    cyl(0.14, 0.09, 0.34, 6, '#ffd97a', 0.55, 0.75, -0.3),
+    sph(0.12, '#ff5c8a', -0.1, 0.75, 0.1),
+  ], false, 35);
+
+  mergedTemplate('barrel', 0.55, () => [
+    cyl(0.4, 0.34, 0.5, 10, '#8a5f34', 0, 0.25, 0),
+    cyl(0.34, 0.4, 0.5, 10, '#8a5f34', 0, 0.75, 0),
+    cyl(0.41, 0.41, 0.08, 10, '#4a3a26', 0, 0.3, 0),
+    cyl(0.41, 0.41, 0.08, 10, '#4a3a26', 0, 0.72, 0),
+  ], false);
+
+  mergedTemplate('rumstack', 1.15, () => [
+    wheel(0.42, 1.1, '#8a5f34', -0.45, 0.42, 0),
+    wheel(0.42, 1.1, '#7d5630', 0.45, 0.42, 0),
+    wheel(0.42, 1.1, '#96693a', 0, 1.14, 0),
+  ], false, 10);
+
+  mergedTemplate('cannon', 1.25, () => {
+    const barrel = new THREE.CylinderGeometry(0.2, 0.3, 2.3, 9);
+    barrel.rotateX(Math.PI / 2 + 0.14);
+    barrel.translate(0, 0.85, 0.35);
+    const muzzle = new THREE.CylinderGeometry(0.26, 0.26, 0.3, 9);
+    muzzle.rotateX(Math.PI / 2 + 0.14);
+    muzzle.translate(0, 1.0, 1.4);
+    return [
+      tint(barrel, '#3a3d46'), tint(muzzle, '#2e3138'),
+      box(0.9, 0.5, 1.5, '#7a5230', 0, 0.45, -0.35),
+      wheel(0.42, 0.14, '#5c4326', -0.52, 0.42, -0.3),
+      wheel(0.42, 0.14, '#5c4326', 0.52, 0.42, -0.3),
+      sph(0.16, '#26262e', 0.65, 0.16, 0.55),
+      sph(0.16, '#26262e', 0.95, 0.16, 0.35),
+      sph(0.16, '#26262e', 0.8, 0.42, 0.45),
+    ];
+  }, false, 15);
+
+  mergedTemplate('anchor', 0.7, () => {
+    const fluke = new THREE.TorusGeometry(0.55, 0.09, 6, 10, Math.PI);
+    fluke.rotateZ(Math.PI);
+    fluke.translate(0, 0.62, 0);
+    const ring = new THREE.TorusGeometry(0.16, 0.05, 6, 10);
+    ring.translate(0, 1.95, 0);
+    return [
+      tint(fluke, '#4a4e58'), tint(ring, '#4a4e58'),
+      box(0.12, 1.5, 0.12, '#4a4e58', 0, 1.1, 0),
+      box(0.8, 0.1, 0.1, '#4a4e58', 0, 1.6, 0),
+    ];
+  }, false);
+
+  mergedTemplate('tiki', 0.45, () => [
+    cyl(0.07, 0.1, 1.7, 5, '#6a4a26', 0, 0.85, 0),
+    cyl(0.16, 0.12, 0.3, 6, '#8a6038', 0, 1.75, 0),
+    sph(0.2, '#ff9c30', 0, 2.0, 0, 1.4),
+    sph(0.1, '#ffe9a0', 0, 2.12, 0),
+  ], false);
+
+  mergedTemplate('campfire', 0.85, () => {
+    const parts = [
+      box(1.1, 0.15, 0.15, '#5c4326', 0, 0.1, 0, 0.5),
+      box(1.1, 0.15, 0.15, '#6a4a26', 0, 0.14, 0, -0.6),
+      box(1.1, 0.15, 0.15, '#4e3820', 0, 0.12, 0, 1.7),
+      sph(0.32, '#ff8c26', 0, 0.4, 0, 1.5),
+      sph(0.18, '#ffd25a', 0, 0.62, 0, 1.4),
+    ];
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      parts.push(sph(0.13, '#7a7468', Math.cos(a) * 0.75, 0.08, Math.sin(a) * 0.75));
+    }
+    return parts;
+  }, false);
+
+  for (const [i, c] of ['#b04838', '#3f6fae', '#8a6a3a'].entries()) {
+    mergedTemplate('tent' + i, 1.5, () => [
+      cone(1.7, 2.0, 4, c, 0, 1.0, 0, Math.PI / 4),
+      cyl(0.05, 0.05, 0.7, 5, '#6a4a26', 0, 2.2, 0),
+      box(0.5, 0.3, 0.05, c, 0.25, 2.3, 0),
+    ], false, 10);
+  }
+
+  /* thatched huts — the pirate village's houses */
+  ['#b89868', '#a8906a', '#c0a070'].forEach((wall, i) => {
+    mergedTemplate('hut' + i, 3.3, () => [
+      cyl(2.5, 2.7, 2.9, 8, wall, 0, 1.45, 0),
+      cone(3.65, 0.7, 8, '#7a6838', 0, 3.15, 0),
+      cone(3.4, 2.4, 8, '#9a8648', 0, 4.2, 0),
+      box(1.1, 1.7, 0.2, '#5a3a28', 0, 0.85, 2.55),
+    ], true, 40);
+  });
+
+  mergedTemplate('tavern', 4.2, () => {
+    const roof = new THREE.ConeGeometry(1, 1, 4);
+    roof.rotateY(Math.PI / 4);
+    roof.scale(6.1, 2.6, 4.7);
+    roof.translate(0, 5.6, 0);
+    tint(roof, '#8a7440');
+    return [
+      box(8.5, 4.4, 6.5, '#9a7a4c', 0, 2.2, 0),
+      roof,
+      box(1.4, 2.2, 0.2, '#4e3820', 0, 1.1, 3.3),
+      box(1.5, 1.1, 0.15, '#ffdf9a', -2.6, 2.2, 3.3),
+      box(1.5, 1.1, 0.15, '#ffdf9a', 2.6, 2.2, 3.3),
+      box(1.6, 1.0, 0.12, '#6a4a26', 0, 3.6, 3.35),
+      wheel(0.42, 1.0, '#8a5f34', 3.6, 0.42, 2.6),
+    ];
+  }, true, 70);
+
+  mergedTemplate('rowboat', 1.35, () => [
+    box(1.5, 0.55, 3.6, '#7a5230', 0, 0.35, 0),
+    box(1.1, 0.4, 3.0, '#33261a', 0, 0.5, 0),
+    box(1.56, 0.14, 0.5, '#8a6038', 0, 0.55, -1.6),
+    box(1.3, 0.1, 0.35, '#8a6038', 0, 0.5, 0.3),
+    box(0.14, 0.1, 2.6, '#a8845a', 0.85, 0.62, 0.2, 0.35),
+  ], false, 10);
+
+  mergedTemplate('wreck-sloop', 3.8, () => {
+    const mast = new THREE.CylinderGeometry(0.12, 0.2, 7.5, 6);
+    mast.rotateZ(0.55);
+    mast.translate(1.2, 3.2, -0.5);
+    const sail = new THREE.BoxGeometry(0.08, 3.2, 2.0);
+    sail.rotateZ(0.55);
+    sail.translate(2.4, 4.2, -0.5);
+    return [
+      box(3.4, 2.4, 9.5, '#6a4a2c', 0, 1.1, 0),
+      box(3.6, 0.5, 9.7, '#7d5833', 0, 2.4, 0),
+      box(3.0, 1.4, 1.6, '#5c4026', 0, 3.0, -3.6),
+      tint(mast, '#5c4326'), tint(sail, '#cdbfa0'),
+      box(0.8, 2.6, 0.5, '#4e3820', -1.55, 1.2, 1.5, 0.2),
+    ];
+  }, true, 90);
+
+  /* beached galleon, served in two courses */
+  mergedTemplate('galleon-bow', 6.0, () => {
+    const sprit = new THREE.CylinderGeometry(0.1, 0.18, 6, 6);
+    sprit.rotateX(-Math.PI / 2 + 0.5);
+    sprit.translate(0, 5.6, 7.5);
+    const mast = new THREE.CylinderGeometry(0.16, 0.26, 12, 7);
+    mast.rotateZ(0.12);
+    mast.translate(0.6, 10, -2);
+    return [
+      box(5.4, 4.6, 12, '#5e4028', 0, 2.3, 0),
+      box(5.0, 1.2, 3.5, '#503622', 0, 1.4, 7.0),
+      box(3.4, 0.9, 2.4, '#503622', 0, 2.1, 8.2),
+      box(5.7, 0.5, 12.2, '#7d5833', 0, 4.85, 0),
+      box(0.5, 0.9, 12.2, '#6a4a2c', -2.7, 5.4, 0),
+      box(0.5, 0.9, 12.2, '#6a4a2c', 2.7, 5.4, 0),
+      tint(sprit, '#5c4326'), tint(mast, '#5c4326'),
+      box(4.6, 0.22, 0.5, '#5c4326', 0.6, 12.5, -2),
+      box(4.2, 3.2, 0.14, '#cdbfa0', 0.9, 10.6, -1.9),
+      sph(0.5, '#ffd24a', 0, 4.2, 9.4),
+    ];
+  }, true, 150);
+  mergedTemplate('galleon-stern', 6.5, () => {
+    const mast = new THREE.CylinderGeometry(0.14, 0.24, 10, 7);
+    mast.rotateZ(-0.5);
+    mast.translate(-1.5, 8, 1);
+    return [
+      box(5.6, 4.8, 11, '#5e4028', 0, 2.4, 0),
+      box(5.8, 0.5, 11.2, '#7d5833', 0, 5.0, 0),
+      box(5.6, 3.4, 4.2, '#6a4a2c', 0, 6.8, -3.2),
+      box(5.8, 0.6, 4.5, '#503622', 0, 8.7, -3.2),
+      box(1.1, 0.9, 0.15, '#ffd97a', -1.6, 6.9, -5.33),
+      box(1.1, 0.9, 0.15, '#ffd97a', 0, 6.9, -5.33),
+      box(1.1, 0.9, 0.15, '#ffd97a', 1.6, 6.9, -5.33),
+      box(0.5, 0.9, 11.2, '#6a4a2c', -2.85, 5.6, 0),
+      box(0.5, 0.9, 11.2, '#6a4a2c', 2.85, 5.6, 0),
+      tint(mast, '#5c4326'),
+      box(0.1, 1.6, 2.4, '#2a2a30', -3.9, 9.6, 1),
+    ];
+  }, true, 180);
+
+  mergedTemplate('fort-tower', 4.5, () => {
+    const parts = [
+      cyl(3.0, 3.4, 6.5, 10, '#9a927e', 0, 3.25, 0),
+      cyl(3.4, 3.2, 0.8, 10, '#8a8270', 0, 6.9, 0),
+    ];
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2;
+      parts.push(box(0.9, 0.8, 0.5, '#8a8270', Math.cos(a) * 3.0, 7.7, Math.sin(a) * 3.0, -a));
+    }
+    parts.push(
+      box(1.2, 1.8, 0.3, '#3a3026', 0, 0.9, 3.25),
+      cyl(0.06, 0.08, 3.2, 5, '#5c4326', 0, 8.9, 0),
+      box(1.7, 1.0, 0.08, '#1c1c22', 0.88, 9.9, 0),
+      sph(0.16, '#f0f0f5', 0.7, 9.95, 0.06),
+    );
+    return parts;
+  }, true, 90);
+
+  mergedTemplate('fort-wall', 3.0, () => {
+    const parts = [box(7.2, 3.2, 1.4, '#9a927e', 0, 1.6, 0)];
+    for (let i = -2; i <= 2; i++) parts.push(box(0.9, 0.7, 1.5, '#8a8270', i * 1.5, 3.55, 0));
+    return parts;
+  }, true, 40);
+
+  mergedTemplate('lighthouse', 4.4, () => [
+    cyl(2.6, 3.0, 3.4, 10, '#d8d0c0', 0, 1.7, 0),
+    cyl(2.2, 2.6, 3.4, 10, '#c04838', 0, 5.1, 0),
+    cyl(1.8, 2.2, 3.4, 10, '#d8d0c0', 0, 8.5, 0),
+    cyl(2.3, 2.3, 0.5, 10, '#6a625a', 0, 10.45, 0),
+    cyl(1.3, 1.3, 1.6, 8, '#ffe9a0', 0, 11.5, 0),
+    cone(1.7, 1.3, 8, '#c04838', 0, 12.95, 0),
+    box(1.3, 2.0, 0.2, '#4e3820', 0, 1.0, 2.85),
+  ], true, 130);
+
+  mergedTemplate('skullrock', 6.8, () => {
+    const parts = [
+      sph(6.0, '#a8a291', 0, 3.6, 0, 0.85),
+      box(7.2, 2.2, 4.4, '#98927f', 0, 1.1, 0.8),
+      sph(1.25, '#2c2a26', -2.1, 5.0, 5.3),
+      sph(1.25, '#2c2a26', 2.1, 5.0, 5.3),
+      sph(0.55, '#2c2a26', 0, 4.0, 5.75, 1.4),
+    ];
+    for (let i = -2; i <= 2; i++) {
+      parts.push(box(0.6, 1.0, 0.5, '#d8d0be', i * 0.95, 1.5, 3.15));
+    }
+    return parts;
+  }, true, 220);
+
+  mergedTemplate('dock', 1.6, () => {
+    const parts = [box(2.6, 0.18, 7.5, '#8a6644', 0, 0.85, 0)];
+    for (let i = 0; i < 8; i++) parts.push(box(2.6, 0.04, 0.12, '#6a4a2c', 0, 0.95, -3.4 + i));
+    for (const [x, z] of [[-1.1, -3.2], [1.1, -3.2], [-1.1, 0], [1.1, 0], [-1.1, 3.2], [1.1, 3.2]]) {
+      parts.push(cyl(0.14, 0.16, 1.1, 6, '#5c4326', x, 0.45, z));
+    }
+    return parts;
+  }, false, 15);
 }
 
 /* --- people --- */
@@ -1094,16 +1630,26 @@ const personLegGeos = [];
 function buildPersonParts() {
   personBodies.length = 0;
   personLegGeos.length = 0;
+  const pirate = theme === 'pirate';
+  const shirts = pirate
+    ? ['#e8e0cc', '#b03838', '#2e2e3a', '#2e5aa0', '#e8e0cc', '#7a2e50', '#d8b04a', '#3a6e4a']
+    : SHIRT;
   for (let i = 0; i < 8; i++) {
-    const shirt = pick(SHIRT), skin = pick(SKIN);
-    personBodies.push(mergeGeometries([
+    const shirt = pick(shirts), skin = pick(SKIN);
+    const parts = [
       box(0.52, 0.62, 0.3, shirt, 0, 1.2, 0),
       sph(0.19, skin, 0, 1.68, 0),
       box(0.13, 0.5, 0.16, shirt, -0.34, 1.2, 0),
       box(0.13, 0.5, 0.16, shirt, 0.34, 1.2, 0),
-    ], false));
+    ];
+    if (pirate) {
+      parts.push(sph(0.2, pick(['#c03030', '#2a2a34', '#2e6aae', '#d8b04a']), 0, 1.79, 0, 0.6));
+      if (Math.random() < 0.35) parts.push(box(0.11, 0.06, 0.1, '#1a1a20', 0.08, 1.7, 0.15));
+    }
+    personBodies.push(mergeGeometries(parts, false));
   }
-  for (const pants of ['#31394a', '#4a4a52', '#6a5a4a']) {
+  const pantsSet = pirate ? ['#4a3a2a', '#31394a', '#5a2e2e'] : ['#31394a', '#4a4a52', '#6a5a4a'];
+  for (const pants of pantsSet) {
     const g = new THREE.BoxGeometry(0.17, 0.62, 0.2);
     g.translate(0, -0.31, 0);
     personLegGeos.push(tint(g, pants));
@@ -1500,16 +2046,213 @@ function genTraffic() {
   }
 }
 
+/* ============================== Pirate-isle generation ============================== */
+
+function beachClutter(cx, cz) {
+  // props on the sandy ring around a block
+  const edge = 14.6;
+  for (const [ox, oz] of [[-edge, -edge], [edge, -edge], [edge, edge], [-edge, edge]]) {
+    if (Math.random() < 0.7) placeTemplate(Math.random() < 0.6 ? 'palm' : 'tiki', cx + ox, cz + oz);
+  }
+  const smalls = ['barrel', 'crate', 'anchor', 'tiki', 'bush', 'goldpile', 'barrel', 'crate'];
+  for (let i = 0; i < 6; i++) {
+    const side = randInt(0, 3);
+    const t = rand(-10, 10);
+    const [ox, oz] = side === 0 ? [t, -edge] : side === 1 ? [t, edge] : side === 2 ? [-edge, t] : [edge, t];
+    placeTemplate(pick(smalls), cx + ox, cz + oz, rand(0, Math.PI * 2));
+  }
+}
+
+function genPirateBlock(bx, bz) {
+  const cx = BLOCK_CENTERS[bx], cz = BLOCK_CENTERS[bz];
+  const d = districtGrid[bx][bz];
+  beachClutter(cx, cz);
+
+  const scatterPeople = (n, r) => {
+    for (let i = 0; i < n; i++) spawnPerson(cx + rand(-r, r), cz + rand(-r, r));
+  };
+  const scatterPalms = (n, r) => {
+    for (let i = 0; i < n; i++) {
+      placeTemplate(Math.random() < 0.35 ? 'palm-big' : 'palm', cx + rand(-r, r), cz + rand(-r, r), rand(0, Math.PI * 2));
+    }
+  };
+
+  if (d === 'village') {
+    placeTemplate('hut' + randInt(0, 2), cx - 7, cz - 6, rand(0, Math.PI * 2));
+    placeTemplate('hut' + randInt(0, 2), cx + 7, cz - 6, rand(0, Math.PI * 2));
+    placeTemplate('hut' + randInt(0, 2), cx - 6, cz + 7, rand(0, Math.PI * 2));
+    if (Math.random() < 0.5) placeTemplate('tent' + randInt(0, 2), cx + 7, cz + 7, rand(0, Math.PI * 2));
+    else placeTemplate('campfire', cx + 7, cz + 7);
+    scatterPalms(3, 12);
+    for (let i = 0; i < 3; i++) placeTemplate('bush', cx + rand(-11, 11), cz + rand(-11, 11));
+    placeTemplate('barrel', cx + rand(-4, 4), cz + rand(-4, 4));
+    scatterPeople(3, 13);
+  } else if (d === 'wrecks') {
+    placeTemplate(Math.random() < 0.5 ? 'galleon-bow' : 'galleon-stern', cx - 5, cz - 4, rand(0, Math.PI * 2));
+    placeTemplate('wreck-sloop', cx + 8, cz + 6, rand(0, Math.PI * 2));
+    placeTemplate('rowboat', cx + rand(-12, -6), cz + rand(8, 12), rand(0, Math.PI * 2));
+    placeTemplate('anchor', cx + rand(4, 10), cz + rand(-12, -8), rand(0, Math.PI * 2));
+    for (let i = 0; i < 3; i++) {
+      placeTemplate(pick(['barrel', 'crate', 'pallets']), cx + rand(-12, 12), cz + rand(-12, 12), rand(0, Math.PI * 2));
+    }
+    if (Math.random() < 0.6) placeTemplate('goldpile', cx + rand(-10, 10), cz + rand(-10, 10));
+    scatterPalms(2, 13);
+    scatterPeople(2, 12);
+  } else if (d === 'market') {
+    if ((bx + bz) % 2 === 0) placeTemplate('tavern', cx - 6, cz - 7, rand(-0.1, 0.1));
+    else {
+      placeTemplate('hut' + randInt(0, 2), cx - 7, cz - 7, rand(0, Math.PI * 2));
+      placeTemplate('hut' + randInt(0, 2), cx + 2, cz - 8, rand(0, Math.PI * 2));
+    }
+    if (bx === 1 && bz === 4) {
+      // market square
+      for (let i = 0; i < 5; i++) {
+        placeTemplate('stall' + randInt(0, 2), cx - 6 + (i % 3) * 6, cz + 4 + Math.floor(i / 3) * 6, rand(0, Math.PI));
+      }
+      for (let i = 0; i < 4; i++) placeTemplate(pick(['crate', 'barrel']), cx + rand(-10, 10), cz + rand(2, 11));
+      scatterPeople(9, 12);
+    } else {
+      placeTemplate('stall' + randInt(0, 2), cx + 6, cz + 6, rand(0, Math.PI));
+      placeTemplate('umbrella', cx - 3, cz + 7);
+      placeTemplate('rumstack', cx - 9, cz + 9, rand(0, Math.PI));
+      placeTemplate('crate', cx + rand(-4, 4), cz + rand(-2, 4));
+      scatterPeople(6, 12);
+    }
+    scatterPalms(2, 13);
+  } else if (d === 'fort') {
+    if (bx === 4 && bz === 4) {
+      placeTemplate('fort-tower', cx, cz - 3);
+      placeTemplate('fort-wall', cx, cz + 10);
+      placeTemplate('fort-wall', cx - 10, cz + 2, Math.PI / 2);
+      placeTemplate('cannon', cx - 5, cz + 6, rand(0, Math.PI * 2));
+      placeTemplate('cannon', cx + 6, cz + 5, rand(0, Math.PI * 2));
+      placeTemplate('goldpile', cx + 8, cz - 6);
+    } else {
+      placeTemplate('fort-tower', cx - 7, cz - 6);
+      placeTemplate('fort-wall', cx + 4, cz - 10);
+      placeTemplate('cannon', cx + 7, cz + 2, rand(0, Math.PI * 2));
+      placeTemplate('rumstack', cx - 4, cz + 8, rand(0, Math.PI));
+      for (let i = 0; i < 3; i++) placeTemplate(pick(['barrel', 'crate']), cx + rand(-10, 10), cz + rand(4, 12));
+      if (Math.random() < 0.5) placeTemplate('chest', cx + rand(-8, 8), cz + rand(6, 11), rand(0, Math.PI * 2));
+    }
+    scatterPeople(3, 12);
+  } else if (d === 'jungle') {
+    scatterPalms(7, 12);
+    for (let i = 0; i < 4; i++) placeTemplate('bush', cx + rand(-12, 12), cz + rand(-12, 12));
+    if (Math.random() < 0.5) placeTemplate('tent' + randInt(0, 2), cx + rand(-8, 8), cz + rand(-8, 8), rand(0, Math.PI * 2));
+    if (Math.random() < 0.45) placeTemplate('goldpile', cx + rand(-9, 9), cz + rand(-9, 9));
+    if (Math.random() < 0.35) placeTemplate('chest', cx + rand(-9, 9), cz + rand(-9, 9), rand(0, Math.PI * 2));
+    scatterPeople(2, 12);
+  } else if (d === 'skull') {
+    placeTemplate('skullrock', cx, cz - 1);
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      placeTemplate('tiki', cx + Math.cos(a) * 11, cz + Math.sin(a) * 11);
+    }
+    placeTemplate('goldpile', cx - 10, cz + 9);
+    placeTemplate('chest', cx + 10, cz + 9, rand(0, Math.PI * 2));
+    scatterPeople(2, 13);
+  } else if (d === 'lighthouse') {
+    placeTemplate('lighthouse', cx, cz - 4);
+    for (let i = 0; i < 6; i++) {
+      placeTemplate('grave', cx - 7 + (i % 3) * 2.4, cz + 8 + Math.floor(i / 3) * 2.8, rand(-0.25, 0.25));
+    }
+    placeTemplate('palm-big', cx + 9, cz + 7);
+    placeTemplate('anchor', cx - 10, cz + 3, rand(0, Math.PI * 2));
+    scatterPeople(2, 12);
+  } else if (d === 'cove') {
+    // treasure cove — X marks the spot
+    placeTemplate('chest', cx, cz, rand(0, Math.PI * 2));
+    placeTemplate('chest', cx + 4, cz + 2, rand(0, Math.PI * 2));
+    placeTemplate('goldpile', cx - 3, cz + 3);
+    placeTemplate('goldpile', cx + 2, cz - 4);
+    placeTemplate('rowboat', cx - 9, cz + 8, rand(0, Math.PI * 2));
+    scatterPalms(4, 12);
+    placeTemplate('tiki', cx - 6, cz - 6);
+    placeTemplate('tiki', cx + 6, cz + 6);
+    scatterPeople(4, 11);
+  } else if (d === 'lagoon') {
+    // boats float on the painted lagoon; a dock reaches in from the west
+    placeTemplate('dock', cx - 10, cz - 1, Math.PI / 2);
+    placeTemplate('rowboat', cx + 1, cz - 1, rand(0, Math.PI * 2));
+    placeTemplate('rowboat', cx + 4, cz + 3, rand(0, Math.PI * 2));
+    for (let i = 0; i < 4; i++) {
+      const a = rand(0, Math.PI * 2);
+      placeTemplate(Math.random() < 0.5 ? 'palm' : 'palm-big', cx + Math.cos(a) * 12, cz + Math.sin(a) * 12);
+    }
+    placeTemplate('bench', cx - 11, cz + 6, Math.PI / 2);
+    scatterPeople(4, 13);
+  } else if (d === 'grove') {
+    scatterPalms(8, 11);
+    placeTemplate('picnic', cx + 6, cz + 6, rand(0, Math.PI));
+    placeTemplate('campfire', cx - 6, cz - 5);
+    scatterPeople(5, 11);
+  } else if (d === 'camp') {
+    placeTemplate('campfire', cx, cz);
+    placeTemplate('tent0', cx - 6, cz - 4, 0.6);
+    placeTemplate('tent1', cx + 6, cz - 4, -0.6);
+    placeTemplate('tent2', cx - 4, cz + 6, 2.4);
+    placeTemplate('rumstack', cx + 6, cz + 5, rand(0, Math.PI));
+    placeTemplate('barrel', cx + 3, cz - 2);
+    placeTemplate('crate', cx - 3, cz + 2, rand(0, Math.PI));
+    placeTemplate('goldpile', cx + 8, cz + 8);
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 + 0.4;
+      placeTemplate('tiki', cx + Math.cos(a) * 8, cz + Math.sin(a) * 8);
+    }
+    scatterPeople(7, 10);
+  }
+}
+
+function genPiratePerimeter() {
+  // palm-lined shores
+  for (let i = 0; i < 46; i++) {
+    const side = randInt(0, 3);
+    const t = rand(-142, 142);
+    const off = rand(135, 145);
+    const [x, z] = side === 0 ? [t, -off] : side === 1 ? [t, off] : side === 2 ? [-off, t] : [off, t];
+    placeTemplate(Math.random() < 0.4 ? 'palm-big' : 'palm', x, z, rand(0, Math.PI * 2));
+  }
+  // docks jutting out where the trails meet the shore
+  for (const r of [ROADS[1], ROADS[3], ROADS[5]]) {
+    placeTemplate('dock', r, HALF - 3.4);
+    placeTemplate('dock', r, -(HALF - 3.4));
+    placeTemplate('dock', HALF - 3.4, r, Math.PI / 2);
+    placeTemplate('dock', -(HALF - 3.4), r, Math.PI / 2);
+  }
+  // beached rowboats, washed-up loot and campfires along the sand
+  for (let i = 0; i < 10; i++) {
+    const side = randInt(0, 3);
+    const t = rand(-130, 130);
+    const off = rand(138, 144);
+    const [x, z] = side === 0 ? [t, -off] : side === 1 ? [t, off] : side === 2 ? [-off, t] : [off, t];
+    const roll = Math.random();
+    if (roll < 0.4) placeTemplate('rowboat', x, z, rand(0, Math.PI * 2));
+    else if (roll < 0.6) placeTemplate('chest', x, z, rand(0, Math.PI * 2));
+    else if (roll < 0.8) {
+      placeTemplate('campfire', x, z);
+      spawnPerson(x + rand(-3, 3), z + rand(-3, 3));
+    } else placeTemplate('crate', x, z, rand(0, Math.PI * 2));
+  }
+}
+
+let builtTheme = null;
 function buildWorld() {
   clearWorld();
-  if (!TEMPLATES.skyscraper) {
+  if (builtTheme !== theme) {
     buildTemplates();
     buildPersonParts();
     buildCarGeos();
+    builtTheme = theme;
   }
-  for (let bx = 0; bx < 6; bx++) for (let bz = 0; bz < 6; bz++) genBlock(bx, bz);
-  genPerimeter();
-  genTraffic();
+  if (theme === 'pirate') {
+    for (let bx = 0; bx < 6; bx++) for (let bz = 0; bz < 6; bz++) genPirateBlock(bx, bz);
+    genPiratePerimeter();
+  } else {
+    for (let bx = 0; bx < 6; bx++) for (let bz = 0; bz < 6; bz++) genBlock(bx, bz);
+    genPerimeter();
+    genTraffic();
+  }
   totalPropCount = props.length;
 }
 
@@ -1868,8 +2611,9 @@ function toast(text, colorCss, big) {
 }
 
 function tierFor(r) {
-  let t = TIERS[0];
-  for (const tier of TIERS) if (r >= tier.r) t = tier;
+  const tiers = tiersNow();
+  let t = tiers[0];
+  for (const tier of tiers) if (r >= tier.r) t = tier;
   return t;
 }
 
@@ -1888,7 +2632,8 @@ function updateBoard() {
       <span class="board-name">${h.name}</span>
       <span class="board-score">${h.score}</span>
     </li>`).join('');
-  cityEaten.textContent = `City devoured: ${Math.round(100 * eatenPropCount / Math.max(1, totalPropCount))}%`;
+  const pct = Math.round(100 * eatenPropCount / Math.max(1, totalPropCount));
+  cityEaten.textContent = theme === 'pirate' ? `Isles plundered: ${pct}%` : `City devoured: ${pct}%`;
 }
 
 let minimapT = 0;
@@ -1897,9 +2642,9 @@ function drawMinimap() {
   const s = w / WORLD;
   const mp = (v) => (v + HALF) * s;
   minimapCtx.clearRect(0, 0, w, w);
-  minimapCtx.fillStyle = 'rgba(10,10,20,0.75)';
+  minimapCtx.fillStyle = theme === 'pirate' ? 'rgba(26,20,8,0.72)' : 'rgba(10,10,20,0.75)';
   minimapCtx.fillRect(0, 0, w, w);
-  minimapCtx.strokeStyle = 'rgba(90,90,120,0.5)';
+  minimapCtx.strokeStyle = theme === 'pirate' ? 'rgba(160,140,90,0.45)' : 'rgba(90,90,120,0.5)';
   minimapCtx.lineWidth = 2;
   for (const r of ROADS) {
     minimapCtx.beginPath(); minimapCtx.moveTo(mp(r), 0); minimapCtx.lineTo(mp(r), w); minimapCtx.stroke();
@@ -2283,7 +3028,7 @@ function spawnHoles() {
   const ps = shuffled[0];
   player.pos.set(ps[0], 0, ps[1]);
   holes.push(player);
-  const npcs = [...NPC_POOL].sort(() => Math.random() - 0.5).slice(0, 5);
+  const npcs = [...npcPool()].sort(() => Math.random() - 0.5).slice(0, 5);
   npcs.forEach((n, i) => {
     const h = new Hole(n.name, n.color, false);
     const s = shuffled[(i + 1) % shuffled.length];
@@ -2293,7 +3038,7 @@ function spawnHoles() {
 }
 
 function spawnMenuHoles() {
-  const npcs = [...NPC_POOL].sort(() => Math.random() - 0.5).slice(0, 5);
+  const npcs = [...npcPool()].sort(() => Math.random() - 0.5).slice(0, 5);
   npcs.forEach((n) => {
     const h = new Hole(n.name, n.color, false);
     h.pos.set(rand(-110, 110), 0, rand(-110, 110));
@@ -2308,7 +3053,7 @@ function startGame() {
   buildWorld();
   spawnHoles();
   playerLives = START_LIVES;
-  playerTier = TIERS[0];
+  playerTier = tiersNow()[0];
   roundTime = ROUND_TIME;
   combo.count = 0; combo.timer = 0; combo.mult = 1;
   pendingRespawn = false;
@@ -2332,7 +3077,11 @@ function endGame(reason, detail) {
   const suffix = ['', 'st', 'nd', 'rd'][rank] || 'th';
   $('go-title').textContent = reason === 'time' ? "Time's Up!" : 'Swallowed!';
   $('go-message').textContent = reason === 'time'
-    ? (rank === 1 ? 'The city is yours. Every other hole ate your dust.' : `The round is over — you finished ${rank}${suffix}.`)
+    ? (rank === 1
+      ? (theme === 'pirate'
+        ? 'The isles are yours — every scallywag ate your wake.'
+        : 'The city is yours. Every other hole ate your dust.')
+      : `The round is over — you finished ${rank}${suffix}.`)
     : `${detail} gulped you down and you're out of lives.`;
   $('final-score').textContent = player.score;
   $('final-size').textContent = Math.round(player.maxR * 2) + 'm';
@@ -2369,6 +3118,36 @@ function respawnPlayer() {
 
 $('btn-start').addEventListener('click', startGame);
 $('btn-restart').addEventListener('click', startGame);
+
+/* ---- starting-area selection ---- */
+function buildEnvironment() {
+  applyAtmosphere();
+  buildSky();
+  buildSea();
+  buildGround();
+}
+
+function syncThemeCards() {
+  document.querySelectorAll('.theme-card').forEach((b) => {
+    b.classList.toggle('theme-card--selected', b.dataset.theme === theme);
+  });
+}
+
+function setTheme(t) {
+  if (t === theme || state === 'play') return;
+  theme = t;
+  localStorage.setItem('hole-theme', t);
+  syncThemeCards();
+  buildEnvironment();
+  buildWorld();
+  spawnMenuHoles();
+  state = 'menu';           // preview orbit behind whichever overlay is open
+  updateBoard();
+}
+
+document.querySelectorAll('.theme-card').forEach((b) => {
+  b.addEventListener('click', () => setTheme(b.dataset.theme));
+});
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && state === 'play') setPaused(true);
@@ -2511,7 +3290,7 @@ function animate() {
   if (state === 'play' && player) {
     const tier = tierFor(player.baseR);
     if (tier !== playerTier) {
-      if (TIERS.indexOf(tier) > TIERS.indexOf(playerTier)) {
+      if (tiersNow().indexOf(tier) > tiersNow().indexOf(playerTier)) {
         toast(`You are now a ${tier.name}!`, '#00e5ff', true);
         AudioFX.tier();
       }
@@ -2558,8 +3337,10 @@ window.addEventListener('resize', () => {
 
 /* ============================== Boot ============================== */
 
+buildEnvironment();
 buildWorld();
 spawnMenuHoles();
+syncThemeCards();
 updateBoard();
 animate();
 
@@ -2570,4 +3351,6 @@ window.__hole = {
   get props() { return props; },
   get state() { return state; },
   get pickups() { return pickups; },
+  get theme() { return theme; },
+  setTheme,
 };

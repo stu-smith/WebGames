@@ -28,10 +28,24 @@
         than you tumbles in — people, benches, cars, trees, and eventually
         entire skyscrapers. Every bite makes you bigger, and bigger means
         hungrier.</p>
-      <p>You're not alone: five rival holes are devouring the same city.
+      <p>You're not alone: five rival holes are devouring the same map.
         A bigger hole can swallow a smaller one whole — eat your rivals for
         a huge bonus, but if one of them swallows <em>you</em>, you lose a
         life. Score the most points before the three-minute round ends.</p>
+
+      <div class="flyout__divider"></div>
+      <h3>Starting Areas</h3>
+      <ul class="flyout__tips">
+        <li><strong>🌃 Neon City</strong> — the classic: a glowing night-time
+          city of suburbs, parks, markets and downtown skyscrapers.</li>
+        <li><strong>🏴‍☠️ Pirate Isles</strong> — a sun-drenched Caribbean
+          island of palm trees, thatched huts, rum barrels, forts, treasure
+          hoards and beached shipwrecks. Gold is worth bonus points, wrecked
+          galleons are the "skyscrapers", and Skull Rock is the biggest
+          mouthful of all.</li>
+        <li>Pick your hunting ground on the start screen — the world behind
+          the menu switches over so you can preview it.</li>
+      </ul>
 
       <div class="flyout__divider"></div>
       <h3>The City</h3>
@@ -125,10 +139,25 @@
   <div class="overlay" id="start-overlay">
     <div class="overlay-content">
       <h2>Neon Hole</h2>
-      <p>You are a hole. The city is dinner. Swallow people, cars and whole
+      <p>You are a hole. The world is dinner. Swallow people, cars and whole
         skyscrapers to grow — and watch out for five rival holes who'd love
         to swallow <em>you</em>. Grab glowing power-ups for a burst of speed,
         size or suction. Biggest appetite in three minutes wins.</p>
+      <div class="theme-select">
+        <span class="theme-select__label">Choose your hunting ground</span>
+        <div class="theme-cards">
+          <button class="theme-card" data-theme="city" type="button">
+            <span class="theme-card__icon">🌃</span>
+            <span class="theme-card__name">Neon City</span>
+            <span class="theme-card__desc">Midnight streets &amp; skyscrapers</span>
+          </button>
+          <button class="theme-card" data-theme="pirate" type="button">
+            <span class="theme-card__icon">🏴‍☠️</span>
+            <span class="theme-card__name">Pirate Isles</span>
+            <span class="theme-card__desc">Sunny shores, shipwrecks &amp; gold</span>
+          </button>
+        </div>
+      </div>
       <div class="hint-row">
         <span><kbd>WASD</kbd> Move</span>
         <span><kbd>Mouse</kbd> Hold to steer</span>
@@ -159,6 +188,21 @@
           <span class="end-stat__value" id="final-best">0</span>
           <span class="end-stat__label">Best</span>
         </span>
+      </div>
+      <div class="theme-select">
+        <span class="theme-select__label">Hunting ground</span>
+        <div class="theme-cards">
+          <button class="theme-card" data-theme="city" type="button">
+            <span class="theme-card__icon">🌃</span>
+            <span class="theme-card__name">Neon City</span>
+            <span class="theme-card__desc">Midnight streets &amp; skyscrapers</span>
+          </button>
+          <button class="theme-card" data-theme="pirate" type="button">
+            <span class="theme-card__icon">🏴‍☠️</span>
+            <span class="theme-card__name">Pirate Isles</span>
+            <span class="theme-card__desc">Sunny shores, shipwrecks &amp; gold</span>
+          </button>
+        </div>
       </div>
       <button class="btn-start" id="btn-restart">Devour Again</button>
     </div>

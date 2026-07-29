@@ -169,6 +169,7 @@ const AudioFX = {
   },
   tier() { this.blip(420, 620, 0.12, 'square', 0.22); setTimeout(() => this.blip(620, 900, 0.16, 'square', 0.22), 110); },
   pop() { this.blip(280, 540, 0.13, 'triangle', 0.35); },
+  power() { this.blip(330, 880, 0.18, 'triangle', 0.4); setTimeout(() => this.blip(550, 1320, 0.22, 'triangle', 0.3), 110); },
   hurt() { this.blip(320, 55, 0.55, 'sawtooth', 0.5); },
   devour() { this.blip(150, 30, 0.7, 'sine', 0.85); this.blip(500, 120, 0.3, 'triangle', 0.3); },
   start() { this.blip(240, 480, 0.2, 'triangle', 0.3); },
@@ -308,6 +309,26 @@ function paintGround() {
     rect(cx - 1.5, cz, 3, 15, '#8d7f63');
   }
 
+  // sandy shoreline fringe — the city sits on an island
+  const sands = ['#c9b078', '#bda269', '#d3bd88'];
+  g.fillStyle = sands[0];
+  const fr = 3.5 * S;
+  g.fillRect(0, 0, 2048, fr);
+  g.fillRect(0, 2048 - fr, 2048, fr);
+  g.fillRect(0, 0, fr, 2048);
+  g.fillRect(2048 - fr, 0, fr, 2048);
+  for (let i = 0; i < 340; i++) {
+    const along = rand(-HALF, HALF);
+    const depth = rand(2, 7.5);
+    const w = rand(2, 6), l = rand(2, 6);
+    g.fillStyle = pick(sands);
+    const side = randInt(0, 3);
+    if (side === 0) g.fillRect(px(-HALF), px(along), depth * S, l * S);
+    else if (side === 1) g.fillRect(px(HALF - depth), px(along), depth * S, l * S);
+    else if (side === 2) g.fillRect(px(along), px(-HALF), w * S, depth * S);
+    else g.fillRect(px(along), px(HALF - depth), w * S, depth * S);
+  }
+
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -388,6 +409,151 @@ function litMesh(geo, shadow = true) {
   m.castShadow = shadow;
   return m;
 }
+
+/* ============================== Ocean — the city is an island ============================== */
+
+const SEA_LEVEL = -1.15;
+let updateSea = () => {};
+
+/* a flat square-ish ring following the island perimeter, inner edge at innerS,
+ * outer edge at outerS (+ deterministic jitter so the coast isn't ruler-straight) */
+function squareRing(innerS, outerS, innerY, outerY, colInner, colOuter, jitterAmp = 0) {
+  const N = 200;
+  const pos = new Float32Array((N + 1) * 2 * 3);
+  const col = new Float32Array((N + 1) * 2 * 3);
+  const idx = [];
+  const ci = new THREE.Color(colInner), co = new THREE.Color(colOuter);
+  for (let i = 0; i <= N; i++) {
+    const a = (i / N) * Math.PI * 2;
+    const dx = Math.cos(a), dz = Math.sin(a);
+    const m = Math.max(Math.abs(dx), Math.abs(dz));
+    const ox = dx / m, oz = dz / m;
+    const j = jitterAmp * (Math.sin(a * 5) * 0.6 + Math.sin(a * 11 + 2) * 0.4);
+    const o = i * 6;
+    pos[o] = ox * innerS; pos[o + 1] = innerY; pos[o + 2] = oz * innerS;
+    pos[o + 3] = ox * (outerS + j); pos[o + 4] = outerY; pos[o + 5] = oz * (outerS + j);
+    col[o] = ci.r; col[o + 1] = ci.g; col[o + 2] = ci.b;
+    col[o + 3] = co.r; col[o + 4] = co.g; col[o + 5] = co.b;
+    if (i < N) {
+      const v = i * 2;
+      idx.push(v, v + 1, v + 2, v + 1, v + 3, v + 2);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+function buildSea() {
+  // water surface: two drifting layers of streaky moonlit texture
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 256;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#0e2338';
+  g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 110; i++) {
+    g.fillStyle = `rgba(${randInt(26, 48)},${randInt(80, 125)},${randInt(125, 170)},${rand(0.08, 0.28).toFixed(2)})`;
+    g.fillRect(rand(0, 256), rand(0, 256), rand(12, 48), rand(1, 2.5));
+  }
+  for (let i = 0; i < 30; i++) {
+    g.fillStyle = `rgba(210,228,255,${rand(0.05, 0.15).toFixed(2)})`;
+    g.fillRect(rand(0, 256), rand(0, 256), rand(2, 7), 1.2);
+  }
+  const tex1 = new THREE.CanvasTexture(cv);
+  tex1.wrapS = tex1.wrapT = THREE.RepeatWrapping;
+  tex1.colorSpace = THREE.SRGBColorSpace;
+  tex1.repeat.set(26, 26);
+  const tex2 = tex1.clone();
+  tex2.needsUpdate = true;
+  tex2.repeat.set(15, 15);
+
+  const seaGeo = new THREE.CircleGeometry(600, 48);
+  seaGeo.rotateX(-Math.PI / 2);
+  const water = new THREE.Mesh(seaGeo, new THREE.MeshLambertMaterial({
+    map: tex1, emissive: 0x0a1626, emissiveIntensity: 0.55,
+  }));
+  water.position.y = SEA_LEVEL;
+  water.receiveShadow = true;
+  scene.add(water);
+
+  const shimmer = new THREE.Mesh(seaGeo, new THREE.MeshLambertMaterial({
+    map: tex2, transparent: true, opacity: 0.35, depthWrite: false,
+  }));
+  shimmer.position.y = SEA_LEVEL + 0.04;
+  scene.add(shimmer);
+
+  // beach skirt sloping from the ground edge down under the waterline
+  const beach = new THREE.Mesh(
+    squareRing(HALF - 1, HALF + 15, -0.03, -3.4, '#cdb67e', '#3e3830', 2.2),
+    new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide })
+  );
+  beach.receiveShadow = true;
+  scene.add(beach);
+
+  // surf foam hugging the shoreline (beach slope crosses SEA_LEVEL ~4 units out)
+  const foamMat = new THREE.MeshBasicMaterial({
+    color: 0xdfeaff, transparent: true, opacity: 0.3, depthWrite: false,
+  });
+  const foam = new THREE.Mesh(
+    squareRing(HALF + 3.2, HALF + 6.4, SEA_LEVEL + 0.05, SEA_LEVEL + 0.05, '#ffffff', '#ffffff', 0.74),
+    foamMat
+  );
+  scene.add(foam);
+
+  // moon-glitter lane stretching toward the moon
+  const glCv = document.createElement('canvas');
+  glCv.width = glCv.height = 128;
+  const gl = glCv.getContext('2d');
+  const gr = gl.createRadialGradient(64, 64, 4, 64, 64, 64);
+  gr.addColorStop(0, 'rgba(255,205,235,0.9)');
+  gr.addColorStop(0.5, 'rgba(255,170,220,0.35)');
+  gr.addColorStop(1, 'rgba(255,150,210,0)');
+  gl.fillStyle = gr;
+  gl.fillRect(0, 0, 128, 128);
+  const mdir = new THREE.Vector2(260, -420).normalize();
+  const glGeo = new THREE.PlaneGeometry(46, 250);
+  glGeo.rotateX(-Math.PI / 2);
+  glGeo.rotateY(Math.atan2(-mdir.x, -mdir.y));
+  const glint = new THREE.Mesh(glGeo, new THREE.MeshBasicMaterial({
+    map: new THREE.CanvasTexture(glCv), transparent: true, opacity: 0.5,
+    blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
+  }));
+  glint.position.set(mdir.x * 300, SEA_LEVEL + 0.08, mdir.y * 300);
+  scene.add(glint);
+
+  // small offshore islets, mostly silhouettes in the fog
+  const islets = [
+    [-250, -120, 10, true], [240, 150, 8, false], [95, -265, 12, true],
+    [-190, 235, 7, true], [290, -40, 5.5, false],
+  ];
+  for (const [x, z, s, treed] of islets) {
+    const parts = [
+      sph(s, '#4c5244', 0, 0, 0, 0.5),
+      sph(s * 0.6, '#575e4c', s * 0.45, s * 0.06, -s * 0.35, 0.5),
+    ];
+    if (treed) {
+      parts.push(cyl(0.22, 0.32, 3, 6, '#5c3f24', 0, s * 0.42 + 1.5, 0));
+      parts.push(sph(1.7, '#2f7a3a', 0, s * 0.42 + 3.4, 0, 0.9));
+      parts.push(sph(1.0, '#3c8a37', 0.9, s * 0.42 + 2.7, 0.4));
+    }
+    const islet = new THREE.Mesh(mergeGeometries(parts, false), matLit);
+    islet.position.set(x, SEA_LEVEL - s * 0.12, z);
+    scene.add(islet);
+  }
+
+  updateSea = (time) => {
+    tex1.offset.set(time * 0.0065, time * 0.0042);
+    tex2.offset.set(-time * 0.005, time * 0.0075);
+    const surge = Math.sin(time * 1.6);
+    foamMat.opacity = 0.24 + 0.12 * surge;
+    foam.position.y = 0.03 * surge;
+    foam.scale.setScalar(1 + 0.004 * surge);
+  };
+}
+buildSea();
 
 /* window-facade textures for taller buildings */
 function windowTexture(facade, litColors) {
@@ -1077,6 +1243,7 @@ function clearWorld() {
   for (const h of holes) h.destroy();
   holes = [];
   eatenPropCount = 0;
+  clearPickups();
 }
 
 function sidewalkFurniture(cx, cz) {
@@ -1421,6 +1588,7 @@ class Hole {
     this.killer = null;
     this.respawnT = 0;
     this.invuln = 0;
+    this.boosts = { speed: 0, size: 0, magnet: 0 };   // seconds remaining per power-up
     // AI
     this.target = null;
     this.targetPos = new THREE.Vector3();
@@ -1448,13 +1616,16 @@ class Hole {
     scene.add(this.pit, this.rim, this.glow, this.label.sprite);
   }
 
-  get r() { return levelR(this.level); }
+  get baseR() { return levelR(this.level); }
+  get r() { return this.boosts.size > 0 ? this.baseR * 1.35 : this.baseR; }
   get area() { return Math.PI * this.r * this.r; }
   setLevel(l) { this.level = clamp(Math.round(l), 0, MAX_LEVEL); this.food = 0; this.vr = this.r; }
   setR(r) { this.setLevel(r * 2 - 3); }
-  foodNeed() { return Math.PI * (this.r + 0.25) * 0.85; } // mass to fill the next ring
+  foodNeed() { return Math.PI * (this.baseR + 0.25) * 0.85; } // mass to fill the next ring
   get depth() { return Math.min(4 + this.r * 2.1, 30); }
-  get speed() { return (this.isPlayer ? 14 : 12.8) / (1 + this.r * 0.048); }
+  get speed() {
+    return (this.isPlayer ? 14 : 12.8) / (1 + this.r * 0.048) * (this.boosts.speed > 0 ? 1.55 : 1);
+  }
 
   visualR() {
     let r = this.vr;
@@ -1468,7 +1639,7 @@ class Hole {
     while (this.food >= this.foodNeed() && this.level < MAX_LEVEL) {
       this.food -= this.foodNeed();
       this.level++;
-      this.maxR = Math.max(this.maxR, this.r);
+      this.maxR = Math.max(this.maxR, this.baseR);
       burst(this.pos.x, 0.5, this.pos.z, this.colorHex, 8, this.r * 0.8);
       if (this.isPlayer) AudioFX.pop();
     }
@@ -1485,8 +1656,10 @@ class Hole {
     this.rim.position.set(this.pos.x, 0.06, this.pos.z);
     this.rim.scale.set(r, 1, r);
     this.glow.position.set(this.pos.x, 0.055, this.pos.z);
-    const pulse = 1 + Math.sin(time * 2.4) * 0.05;
+    const boosted = this.boosts.speed > 0 || this.boosts.size > 0 || this.boosts.magnet > 0;
+    const pulse = 1 + Math.sin(time * (boosted ? 6 : 2.4)) * (boosted ? 0.1 : 0.05);
     this.glow.scale.set(r * pulse, 1, r * pulse);
+    this.glow.material.opacity = boosted ? 0.3 + 0.1 * Math.sin(time * 8) : 0.18;
     if (this.invuln > 0) {
       this.rim.material.opacity = 0.35 + 0.6 * Math.abs(Math.sin(time * 10));
     } else this.rim.material.opacity = 0.95;
@@ -1554,13 +1727,134 @@ function updateParticles(dt) {
   }
 }
 
+/* ============================== Power-ups ============================== */
+
+const POWERUPS = {
+  speed:  { name: 'Turbo',  icon: '⚡', color: 0xffd24a, css: '#ffd24a', dur: 8,  desc: 'speed boost!' },
+  size:   { name: 'Mega',   icon: '🔺', color: 0xff4fa3, css: '#ff4fa3', dur: 10, desc: 'you swell up!' },
+  magnet: { name: 'Magnet', icon: '🧲', color: 0xb26bff, css: '#b26bff', dur: 8,  desc: 'loot gets dragged in!' },
+};
+
+const matPickup = new THREE.MeshBasicMaterial({ vertexColors: true });
+const PICKUP_GEOS = {
+  speed: mergeGeometries([
+    box(0.44, 0.5, 0.2, '#ffd24a', 0.15, 0.45, 0),
+    box(0.44, 0.5, 0.2, '#ffe58a', -0.13, 0, 0),
+    box(0.44, 0.5, 0.2, '#ffd24a', 0.15, -0.45, 0),
+  ], false),
+  size: mergeGeometries([
+    cone(0.5, 0.7, 8, '#ff4fa3', 0, 0.45, 0),
+    box(0.3, 0.7, 0.3, '#ff7fbc', 0, -0.25, 0),
+  ], false),
+  magnet: mergeGeometries([
+    tint(new THREE.TorusGeometry(0.5, 0.15, 8, 16, Math.PI), '#b26bff'),
+    box(0.32, 0.2, 0.3, '#e8e8ee', -0.5, -0.08, 0),
+    box(0.32, 0.2, 0.3, '#e8e8ee', 0.5, -0.08, 0),
+  ], false),
+};
+const pickupRingGeo = new THREE.RingGeometry(0.85, 1.2, 26);
+pickupRingGeo.rotateX(-Math.PI / 2);
+const pickupBeamGeo = new THREE.CylinderGeometry(0.32, 0.5, 5, 10, 1, true);
+pickupBeamGeo.translate(0, 2.5, 0);
+for (const def of Object.values(POWERUPS)) {
+  def.ringMat = new THREE.MeshBasicMaterial({
+    color: def.color, transparent: true, opacity: 0.55,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  def.beamMat = new THREE.MeshBasicMaterial({
+    color: def.color, transparent: true, opacity: 0.1, side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+}
+
+const pickups = [];
+const PICKUP_MAX = 4;
+const PICKUP_LIFE = 26;
+let pickupTimer = 4;
+let powerCache = '';
+
+function spawnPickup() {
+  const type = pick(Object.keys(POWERUPS));
+  const def = POWERUPS[type];
+  let x = 0, z = 0;
+  for (let i = 0; i < 24; i++) {
+    x = rand(-BOUND + 10, BOUND - 10);
+    z = rand(-BOUND + 10, BOUND - 10);
+    const holeClear = holes.every((h) => !h.alive || Math.hypot(h.pos.x - x, h.pos.z - z) > 18);
+    const pkClear = pickups.every((p) => Math.hypot(p.grp.position.x - x, p.grp.position.z - z) > 24);
+    if (holeClear && pkClear) break;
+  }
+  const grp = new THREE.Group();
+  const icon = new THREE.Mesh(PICKUP_GEOS[type], matPickup);
+  icon.position.y = 1.55;
+  const ring = new THREE.Mesh(pickupRingGeo, def.ringMat);
+  ring.position.y = 0.08;
+  ring.renderOrder = 3;
+  const beam = new THREE.Mesh(pickupBeamGeo, def.beamMat);
+  grp.add(icon, ring, beam);
+  grp.position.set(x, 0, z);
+  scene.add(grp);
+  pickups.push({ type, grp, icon, ring, life: PICKUP_LIFE, phase: rand(0, 10) });
+}
+
+function removePickup(i) {
+  scene.remove(pickups[i].grp);
+  pickups.splice(i, 1);
+}
+
+function clearPickups() {
+  while (pickups.length) removePickup(pickups.length - 1);
+  pickupTimer = 4;
+}
+
+function collectPickup(hole, p, i) {
+  const def = POWERUPS[p.type];
+  hole.boosts[p.type] = Math.max(hole.boosts[p.type], def.dur);
+  burst(p.grp.position.x, 1, p.grp.position.z, def.color, 10, 1.4);
+  if (hole.isPlayer) {
+    AudioFX.power();
+    toast(`${def.icon} ${def.name} — ${def.desc}`, def.css, true);
+  }
+  removePickup(i);
+}
+
+function updatePickups(dt, time) {
+  pickupTimer -= dt;
+  if (pickupTimer <= 0 && pickups.length < PICKUP_MAX) {
+    spawnPickup();
+    pickupTimer = rand(5, 10);
+  }
+  for (let i = pickups.length - 1; i >= 0; i--) {
+    const p = pickups[i];
+    p.life -= dt;
+    if (p.life <= 0) { removePickup(i); continue; }
+    p.icon.rotation.y += dt * 2.4;
+    p.icon.position.y = 1.55 + Math.sin(time * 2.2 + p.phase) * 0.22;
+    p.icon.visible = p.life > 3 || Math.sin(time * 12) > -0.2;  // blink before fading out
+    const pulse = 1 + Math.sin(time * 3 + p.phase) * 0.12;
+    p.ring.scale.set(pulse, 1, pulse);
+    for (const h of holes) {
+      if (!h.alive || h.dying) continue;
+      const d = Math.hypot(h.pos.x - p.grp.position.x, h.pos.z - p.grp.position.z);
+      if (d < h.r * 0.92 + 0.7) { collectPickup(h, p, i); break; }
+    }
+  }
+}
+
+function updateBoosts(dt) {
+  for (const h of holes) {
+    for (const k in h.boosts) if (h.boosts[k] > 0) h.boosts[k] = Math.max(0, h.boosts[k] - dt);
+  }
+}
+
 /* ============================== HUD / DOM ============================== */
 
 const $ = (id) => document.getElementById(id);
 const hudScore = $('stat-score'), hudSize = $('stat-size'), hudTier = $('stat-tier'),
   hudLives = $('stat-lives'), hudTime = $('stat-time'), comboBadge = $('combo-badge'),
   boardList = $('board-list'), cityEaten = $('city-eaten'), sizeBar = $('size-bar'),
-  toastBox = $('toasts'), minimap = $('minimap'), muteBtn = $('mute-btn');
+  toastBox = $('toasts'), minimap = $('minimap'), muteBtn = $('mute-btn'),
+  powerBadges = $('powerup-badges');
 const minimapCtx = minimap.getContext('2d');
 
 function toast(text, colorCss, big) {
@@ -1616,6 +1910,10 @@ function drawMinimap() {
     if (!p.alive || p.falling || p.type === 'person') continue;
     const size = p.eatR > 3 ? 3 : p.eatR > 1 ? 2 : 1;
     minimapCtx.fillRect(mp(p.root.position.x) - size / 2, mp(p.root.position.z) - size / 2, size, size);
+  }
+  for (const pk of pickups) {
+    minimapCtx.fillStyle = POWERUPS[pk.type].css;
+    minimapCtx.fillRect(mp(pk.grp.position.x) - 2, mp(pk.grp.position.z) - 2, 4, 4);
   }
   for (const h of holes) {
     if (!h.alive) continue;
@@ -1739,17 +2037,26 @@ function updateFalling(p, dt) {
   }
 }
 
-function holeEatsProps(hole) {
+function holeEatsProps(hole, dt) {
   if (!hole.alive || hole.dying) return;
   const r = hole.r;
   const capacity = r * 0.8;
   const reach = r * 0.92 + 0.25;
+  const magnet = hole.boosts.magnet > 0;
+  const pullR = r * 4 + 9;
   for (const p of props) {
     if (!p.alive || p.falling) continue;
     if (p.eatR > capacity) continue;
     const dx = p.root.position.x - hole.pos.x;
     const dz = p.root.position.z - hole.pos.z;
-    if (dx * dx + dz * dz < reach * reach) startFall(p, hole);
+    const d2 = dx * dx + dz * dz;
+    if (d2 < reach * reach) { startFall(p, hole); continue; }
+    if (magnet && d2 < pullR * pullR) {
+      const d = Math.sqrt(d2);
+      const pull = (1 - d / pullR) * (13 + r * 1.5);
+      p.root.position.x -= dx / d * pull * dt;
+      p.root.position.z -= dz / d * pull * dt;
+    }
   }
 }
 
@@ -1772,6 +2079,7 @@ function devourHole(big, small) {
   small.dying = true;
   small.dyingT = 0;
   small.killer = big;
+  small.boosts.speed = small.boosts.size = small.boosts.magnet = 0;
   big.gain(small.area * 0.55 + small.food * 0.5, 150 + Math.round(small.score * 0.25));
   burst(big.pos.x, 0.6, big.pos.z, small.colorHex, 14, big.r * 0.8);
   if (small.isPlayer) {
@@ -1836,6 +2144,20 @@ function npcThink(h) {
           return;
         }
       }
+    }
+  }
+  // grab a nearby power-up
+  if (Math.random() < 0.55) {
+    let bp = null, bd = 46;
+    for (const pk of pickups) {
+      const d = Math.hypot(pk.grp.position.x - h.pos.x, pk.grp.position.z - h.pos.z);
+      if (d < bd) { bd = d; bp = pk; }
+    }
+    if (bp) {
+      h.mode = 'feed';
+      h.target = null;
+      h.targetPos.set(bp.grp.position.x, 0, bp.grp.position.z);
+      return;
     }
   }
   // feed: best value/distance prop
@@ -2041,7 +2363,7 @@ function respawnPlayer() {
   player.pos.set(s.x, 0, s.z);
   player.vel.set(0, 0, 0);
   player.invuln = 3.5;
-  playerTier = tierFor(player.r);
+  playerTier = tierFor(player.baseR);
   toast(`${playerLives + 1 > 1 ? '' : 'Last life — '}back in the fight!`, '#00e5ff');
 }
 
@@ -2101,7 +2423,7 @@ function updateHoles(dt) {
     } else {
       npcMove(h, dt);
     }
-    holeEatsProps(h);
+    holeEatsProps(h, dt);
   }
   holeVsHole();
 }
@@ -2167,11 +2489,13 @@ function animate() {
           continue;
         }
         npcMove(h, dt);
-        holeEatsProps(h);
+        holeEatsProps(h, dt);
       }
       if (state === 'menu') holeVsHole();
     }
 
+    updateBoosts(dt);
+    updatePickups(dt, time);
     updatePeople(dt, time);
     updateCars(dt);
     for (const p of props) if (p.falling) updateFalling(p, dt);
@@ -2181,10 +2505,11 @@ function animate() {
   }
 
   updateCamera(dt, time);
+  updateSea(time);
 
   // HUD
   if (state === 'play' && player) {
-    const tier = tierFor(player.r);
+    const tier = tierFor(player.baseR);
     if (tier !== playerTier) {
       if (TIERS.indexOf(tier) > TIERS.indexOf(playerTier)) {
         toast(`You are now a ${tier.name}!`, '#00e5ff', true);
@@ -2204,6 +2529,18 @@ function animate() {
     } else {
       comboBadge.classList.remove('combo--on');
     }
+    const badges = [];
+    for (const k in player.boosts) {
+      if (player.boosts[k] > 0) {
+        const def = POWERUPS[k];
+        badges.push(`<span class="powerup-badge" style="color:${def.css}">${def.icon} ${def.name} · ${Math.ceil(player.boosts[k])}s</span>`);
+      }
+    }
+    const badgeHtml = badges.join('');
+    if (badgeHtml !== powerCache) { powerCache = badgeHtml; powerBadges.innerHTML = badgeHtml; }
+  } else if (powerCache) {
+    powerCache = '';
+    powerBadges.innerHTML = '';
   }
   boardT -= dt;
   if (boardT <= 0) { boardT = 0.3; updateBoard(); }
@@ -2232,4 +2569,5 @@ window.__hole = {
   get holes() { return holes; },
   get props() { return props; },
   get state() { return state; },
+  get pickups() { return pickups; },
 };

@@ -36,7 +36,7 @@
       <div class="flyout__divider"></div>
       <h3>The City</h3>
       <ul class="flyout__tips">
-        <li><strong>Suburbs</strong> — houses, gardens and parked cars: perfect early snacks.</li>
+        <li><strong>Suburbs</strong> — terraced streets, gardens and parked cars: perfect early snacks. Terraces come apart one house at a time.</li>
         <li><strong>The Park</strong> — packed with people, benches, railings and a fountain.</li>
         <li><strong>Market Quarter</strong> — shops, stalls and kiosks in tasty clusters.</li>
         <li><strong>Industrial Yard</strong> — containers, tanks and warehouses for mid-game growth.</li>
@@ -56,6 +56,9 @@
       <div class="flyout__divider"></div>
       <h3>Tips</h3>
       <ul class="flyout__tips">
+        <li>Your hole grows in whole-metre jumps — the bar under your size shows how close the next one is.</li>
+        <li>Round buildings (silos, water towers, the round tower) slip into a smaller hole than square ones — no corners to catch.</li>
+        <li>Big office blocks are built from separate slabs; eat them chunk by chunk.</li>
         <li>Chain quick snacks to build a <strong>combo multiplier</strong> — up to ×4 points.</li>
         <li>Check the minimap: dense clusters of dots mean dense calories.</li>
         <li>Steer clear of bigger rivals — the leaderboard shows who's ahead, the label shows who's bigger.</li>
@@ -82,8 +85,9 @@
     </div>
     <div class="hud-panel">
       <span class="hud-label">Size</span>
-      <span class="hud-value" id="stat-size">2.7m</span>
+      <span class="hud-value" id="stat-size">3m</span>
       <span class="hud-tier" id="stat-tier">Pothole</span>
+      <span class="hud-bar"><span class="hud-bar__fill" id="size-bar"></span></span>
     </div>
     <div class="hud-panel">
       <span class="hud-label">Lives</span>
@@ -136,7 +140,7 @@
           <span class="end-stat__label">Rank</span>
         </span>
         <span class="end-stat">
-          <span class="end-stat__value" id="final-size">2.7m</span>
+          <span class="end-stat__value" id="final-size">3m</span>
           <span class="end-stat__label">Max Size</span>
         </span>
         <span class="end-stat">

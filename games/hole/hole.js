@@ -15,7 +15,9 @@ const BLOCK_CENTERS = [-105, -63, -21, 21, 63, 105];
 const BLOCK_INNER = 13;          // buildable half-extent inside a block
 const MAX_HOLES = 8;
 const ROUND_TIME = 180;
-const START_RADIUS = 1.35;
+const MAX_LEVEL = 24;
+const levelR = (lvl) => 1.5 + lvl * 0.5;   // diameter = (3 + level) whole metres
+const START_RADIUS = levelR(0);
 const START_LIVES = 3;
 
 const TIERS = [
@@ -166,6 +168,7 @@ const AudioFX = {
     if (size > 2.4) this.blip(90, 32, 0.5, 'sine', 0.7);
   },
   tier() { this.blip(420, 620, 0.12, 'square', 0.22); setTimeout(() => this.blip(620, 900, 0.16, 'square', 0.22), 110); },
+  pop() { this.blip(280, 540, 0.13, 'triangle', 0.35); },
   hurt() { this.blip(320, 55, 0.55, 'sawtooth', 0.5); },
   devour() { this.blip(150, 30, 0.7, 'sine', 0.85); this.blip(500, 120, 0.3, 'triangle', 0.3); },
   start() { this.blip(240, 480, 0.2, 'triangle', 0.3); },
@@ -432,6 +435,16 @@ function facadeBox(w, h, d, matIndex) {
   m.castShadow = true;
   return m;
 }
+function facadeCyl(radius, h, matIndex) {
+  const g = new THREE.CylinderGeometry(radius, radius, h, 22, 1);
+  const uv = g.attributes.uv;
+  const circ = 2 * Math.PI * radius;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * circ / 2.7, uv.getY(i) * h / 2.7);
+  g.translate(0, h / 2, 0);
+  const m = new THREE.Mesh(g, facadeMats[matIndex % facadeMats.length]);
+  m.castShadow = true;
+  return m;
+}
 
 function signTexture(text, color) {
   const cv = document.createElement('canvas');
@@ -651,11 +664,95 @@ function buildTemplates() {
     box(1.7, 0.9, 0.1, '#fff7d0', 0, 9.3, 0.18),
   ]);
 
-  mergedTemplate('tank', 3.4, () => [
+  /* cylindrical structures fit a smaller hole — no corners to catch */
+  mergedTemplate('tank', 2.8, () => [
     cyl(2.6, 2.6, 5.2, 14, '#9aa2ae', 0, 2.6, 0),
     cyl(2.7, 2.7, 0.3, 14, '#7a828e', 0, 5.35, 0),
     box(0.2, 6.4, 0.2, '#6a727e', 2.3, 3.2, 0),
   ]);
+  mergedTemplate('silo', 2.1, () => [
+    cyl(2.0, 2.0, 8.5, 12, '#b8c0cc', 0, 4.25, 0),
+    sph(2.0, '#98a0ac', 0, 8.5, 0, 0.5),
+    cyl(0.14, 0.14, 8, 6, '#6a727e', 2.12, 4, 0),
+  ], true, 30);
+  mergedTemplate('watertower', 2.6, () => [
+    box(0.28, 6.5, 0.28, '#5a4a3c', -1.7, 3.25, -1.7),
+    box(0.28, 6.5, 0.28, '#5a4a3c', 1.7, 3.25, -1.7),
+    box(0.28, 6.5, 0.28, '#5a4a3c', -1.7, 3.25, 1.7),
+    box(0.28, 6.5, 0.28, '#5a4a3c', 1.7, 3.25, 1.7),
+    cyl(2.4, 2.1, 3.6, 12, '#8a6a5a', 0, 8.2, 0),
+    cone(2.6, 1.4, 12, '#6a4a3a', 0, 10.7, 0),
+  ], true, 40);
+
+  /* small street clutter */
+  mergedTemplate('bollard', 0.3, () => [
+    cyl(0.1, 0.13, 0.75, 6, '#39405a', 0, 0.38, 0),
+    sph(0.11, '#ffd24a', 0, 0.78, 0),
+  ], false);
+  mergedTemplate('cone', 0.3, () => [
+    box(0.55, 0.07, 0.55, '#e06a24', 0, 0.04, 0),
+    cone(0.28, 0.7, 8, '#ff7f2a', 0, 0.4, 0),
+  ], false);
+  mergedTemplate('phonebox', 0.85, () => [
+    box(1.1, 2.6, 1.1, '#d03a3a', 0, 1.3, 0),
+    box(1.2, 0.25, 1.2, '#a82828', 0, 2.7, 0),
+    box(0.75, 1.3, 0.06, '#9adfff', 0, 1.5, 0.56),
+  ], false);
+  mergedTemplate('dumpster', 1.1, () => [
+    box(2.4, 1.3, 1.4, '#3f7a4a', 0, 0.78, 0),
+    box(2.5, 0.16, 1.5, '#356540', 0, 1.5, 0, 0.03),
+    box(0.5, 0.25, 1.3, '#2c2c34', -0.9, 0.12, 0),
+    box(0.5, 0.25, 1.3, '#2c2c34', 0.9, 0.12, 0),
+  ], false);
+  mergedTemplate('bike', 0.5, () => [
+    wheel(0.35, 0.07, '#1a1a20', 0, 0.35, 0.55),
+    wheel(0.35, 0.07, '#1a1a20', 0, 0.35, -0.55),
+    box(0.06, 0.09, 1.1, pick(['#d04b5a', '#4b7fd0', '#4bd08a']), 0, 0.56, 0),
+    box(0.06, 0.5, 0.06, '#3a3a44', 0, 0.8, -0.5),
+    box(0.42, 0.05, 0.06, '#3a3a44', 0, 1.05, -0.5),
+    box(0.06, 0.35, 0.06, '#3a3a44', 0, 0.75, 0.45),
+    box(0.28, 0.06, 0.14, '#4a3520', 0, 0.93, 0.45),
+  ], false);
+  mergedTemplate('clock', 0.7, () => {
+    const face = new THREE.CylinderGeometry(0.5, 0.5, 0.14, 12);
+    face.rotateX(Math.PI / 2);
+    face.translate(0, 3.6, 0);
+    tint(face, '#f0ead0');
+    return [
+      cyl(0.08, 0.12, 3.2, 6, '#2e4a3c', 0, 1.6, 0),
+      face,
+      box(0.06, 0.3, 0.02, '#22222c', 0, 3.7, 0.09),
+      box(0.2, 0.06, 0.02, '#22222c', 0.08, 3.6, 0.09),
+    ];
+  }, false);
+  mergedTemplate('planter', 0.6, () => [
+    cyl(0.55, 0.42, 0.6, 8, '#7a5a48', 0, 0.3, 0),
+    sph(0.55, pick(treeGreens), 0, 0.85, 0, 0.8),
+  ], false);
+  mergedTemplate('picnic', 0.95, () => [
+    box(1.8, 0.1, 1.0, '#9a6a3c', 0, 0.75, 0),
+    box(1.8, 0.08, 0.45, '#9a6a3c', 0, 0.45, 0.78),
+    box(1.8, 0.08, 0.45, '#9a6a3c', 0, 0.45, -0.78),
+    box(0.12, 0.75, 1.7, '#7a5230', -0.7, 0.38, 0),
+    box(0.12, 0.75, 1.7, '#7a5230', 0.7, 0.38, 0),
+  ], false);
+  mergedTemplate('swing', 1.3, () => [
+    box(0.14, 2.5, 0.14, '#d0576a', -1.5, 1.25, 0),
+    box(0.14, 2.5, 0.14, '#d0576a', 1.5, 1.25, 0),
+    box(3.3, 0.14, 0.14, '#d0576a', 0, 2.5, 0),
+    box(0.05, 1.5, 0.05, '#8a8a96', -0.7, 1.7, 0),
+    box(0.05, 1.5, 0.05, '#8a8a96', -0.3, 1.7, 0),
+    box(0.5, 0.07, 0.3, '#f0c33c', -0.5, 0.95, 0),
+    box(0.05, 1.3, 0.05, '#8a8a96', 0.4, 1.8, 0),
+    box(0.05, 1.3, 0.05, '#8a8a96', 0.8, 1.8, 0),
+    box(0.5, 0.07, 0.3, '#57d9ff', 0.6, 1.15, 0),
+  ], false);
+  mergedTemplate('slide', 1.0, () => [
+    box(0.8, 0.12, 0.8, '#4b7fd0', 0, 2.0, -1.2),
+    box(0.1, 2.0, 0.1, '#4b7fd0', -0.35, 1.0, -1.5),
+    box(0.1, 2.0, 0.1, '#4b7fd0', 0.35, 1.0, -1.5),
+    box(0.7, 0.1, 2.6, '#f0c33c', 0, 1.15, 0.2, 0).rotateX(-0.6),
+  ], false);
 
   for (const [i, c] of ['#c85a3c', '#3c78c8', '#4fae62', '#c8a03c'].entries()) {
     mergedTemplate('container' + i, 2.1, () => [
@@ -689,6 +786,49 @@ function buildTemplates() {
       box(6.0, 0.8, 0.2, aw, 0, 4.0, 3.3),
     ], true, 40);
   });
+
+  /* --- terraced houses: a row is built from individual eatable chunks --- */
+  const terraceWalls = ['#c87a6a', '#c8a05a', '#8aa06a', '#7a86b0', '#b07a9a', '#9a8a70'];
+  terraceWalls.forEach((wall, i) => {
+    const h = 5 + (i % 3) * 0.9;
+    mergedTemplate('terrace' + i, 2.0, () => [
+      box(3.3, h, 6, wall, 0, h / 2, 0),
+      box(3.45, 0.4, 6.2, '#4a4454', 0, h + 0.15, 0),
+      box(1.0, 2.0, 0.12, '#5a3a28', -0.8, 1.0, 3.02),
+      box(1.1, 0.9, 0.12, '#ffe9b0', 0.7, 1.6, 3.02),
+      box(1.1, 0.9, 0.12, '#ffedb8', -0.6, 3.4, 3.02),
+      box(1.1, 0.9, 0.12, '#9adfff', 0.7, 3.4, 3.02),
+      cyl(0.22, 0.22, 1.0, 6, '#6a5a48', 1.0, h + 0.65, -1.6),
+    ], true, 25);
+  });
+
+  /* --- office blocks assembled from separate slabs --- */
+  for (let i = 0; i < 3; i++) {
+    const h = 15 + i * 2.5;
+    template('officechunk' + i, 3.6, () => {
+      const g = new THREE.Group();
+      g.add(facadeBox(4.6, h, 9, i));
+      g.add(litMesh(mergeGeometries([
+        box(4.8, 0.5, 9.2, '#46425a', 0, h + 0.2, 0),
+        box(2.2, 1.4, 0.3, '#ffe9b0', 0, 0.8, 4.62),
+      ], false)));
+      return g;
+    }, 60);
+  }
+
+  /* --- cylindrical tower: slips into a smaller hole than a square office --- */
+  template('roundtower', 4.8, () => {
+    const g = new THREE.Group();
+    const h = rand(22, 28);
+    g.add(facadeCyl(5.0, h, randInt(0, 2)));
+    g.add(litMesh(mergeGeometries([
+      cyl(5.2, 5.2, 0.6, 22, '#46425a', 0, h + 0.25, 0),
+      cyl(1.4, 1.8, 1.2, 10, '#3a3846', 0, h + 1.1, 0),
+      cyl(0.12, 0.12, 5, 5, '#8a8a96', 0, h + 3.5, 0),
+      sph(0.28, '#ff5060', 0, h + 6, 0),
+    ], false)));
+    return g;
+  }, 130);
 
   /* --- taller buildings: textured facade + lit details, grouped --- */
   function facadeBuilding(w, h, d, matIndex, extras, signIndex = -1) {
@@ -914,6 +1054,21 @@ function placeTemplate(key, x, z, ry = 0) {
   return p;
 }
 
+/* a row of chunk-buildings laid along the local x axis, rotated by ry */
+function placeRow(keys, spacing, cx, cz, ry) {
+  const n = keys.length;
+  for (let k = 0; k < n; k++) {
+    const off = (k - (n - 1) / 2) * spacing;
+    placeTemplate(keys[k], cx + Math.cos(ry) * off, cz - Math.sin(ry) * off, ry);
+  }
+}
+function placeTerrace(cx, cz, ry, count = 4) {
+  placeRow(Array.from({ length: count }, () => 'terrace' + randInt(0, 5)), 3.4, cx, cz, ry);
+}
+function placeOfficeRow(cx, cz, ry) {
+  placeRow(Array.from({ length: 3 }, () => 'officechunk' + randInt(0, 2)), 4.7, cx, cz, ry);
+}
+
 /* ============================== City generation ============================== */
 
 function clearWorld() {
@@ -931,8 +1086,9 @@ function sidewalkFurniture(cx, cz) {
   for (const [ox, oz] of corners) {
     if (Math.random() < 0.75) placeTemplate('lamp', cx + ox, cz + oz);
   }
-  const smalls = ['hydrant', 'bin', 'mailbox', 'sign-stop', 'sign-warn', 'sign-info', 'bench', 'bush'];
-  for (let i = 0; i < 4; i++) {
+  const smalls = ['hydrant', 'bin', 'mailbox', 'sign-stop', 'sign-warn', 'sign-info', 'bench', 'bush',
+    'bollard', 'planter', 'bike', 'bollard'];
+  for (let i = 0; i < 7; i++) {
     const side = randInt(0, 3);
     const t = rand(-10, 10);
     const [ox, oz] = side === 0 ? [t, -edge] : side === 1 ? [t, edge] : side === 2 ? [-edge, t] : [edge, t];
@@ -951,19 +1107,27 @@ function genBlock(bx, bz) {
   };
 
   if (d === 'residential') {
-    for (const [ox, oz] of [[-6.5, -6.5], [6.5, -6.5], [-6.5, 6.5], [6.5, 6.5]]) {
+    // terrace row along the north edge, detached houses to the south
+    placeTerrace(cx, cz - 8, 0);
+    for (const [ox, oz] of [[-6.5, 6.5], [6.5, 6.5]]) {
       placeTemplate('house' + randInt(0, 3), cx + ox, cz + oz,
         Math.atan2(-ox, -oz) + rand(-0.15, 0.15));
     }
-    placeTemplate('tree', cx + rand(-2, 2), cz + rand(-2, 2));
-    for (let i = 0; i < 3; i++) placeTemplate('bush', cx + rand(-11, 11), cz + rand(-11, 11));
-    scatterPeople(2, 13);
+    placeTemplate('tree', cx + rand(-2, 2), cz + rand(-1, 2));
+    for (let i = 0; i < 3; i++) placeTemplate('bush', cx + rand(-11, 11), cz + rand(0, 11));
+    if (Math.random() < 0.4) placeTemplate('bike', cx + rand(-8, 8), cz + rand(1, 4));
+    scatterPeople(3, 13);
   } else if (d === 'downtown') {
     const big = Math.random() < 0.3 ? 'skyscraper' : 'tower' + randInt(0, 1);
     placeTemplate(big, cx - 6, cz - 5.5, rand(-0.1, 0.1));
-    placeTemplate('office' + randInt(0, 2), cx + 6.5, cz + 6, rand(-0.1, 0.1));
+    const roll = Math.random();
+    if (roll < 0.3) placeTemplate('roundtower', cx + 7, cz + 6);
+    else if (roll < 0.7) placeOfficeRow(cx + 8, cz + 2, Math.PI / 2);
+    else placeTemplate('office' + randInt(0, 2), cx + 6.5, cz + 6, rand(-0.1, 0.1));
     if (Math.random() < 0.6) placeTemplate('busstop', cx - 8, cz + 13.6, Math.PI);
-    scatterPeople(3, 13);
+    if (Math.random() < 0.5) placeTemplate('phonebox', cx - 12, cz + 10);
+    if (Math.random() < 0.5) placeTemplate('clock', cx - 13.8, cz - 6);
+    scatterPeople(5, 13);
   } else if (d === 'commercial') {
     placeTemplate('shop' + randInt(0, 3), cx - 8, cz - 7, Math.PI / 2);
     placeTemplate('shop' + randInt(0, 3), cx + 6, cz - 7);
@@ -973,33 +1137,46 @@ function genBlock(bx, bz) {
         placeTemplate('stall' + randInt(0, 2), cx - 6 + (i % 3) * 6, cz + 4 + Math.floor(i / 3) * 6, rand(0, Math.PI));
       }
       for (let i = 0; i < 4; i++) placeTemplate('crate', cx + rand(-10, 10), cz + rand(2, 11));
-      scatterPeople(6, 12);
+      scatterPeople(9, 12);
     } else {
       placeTemplate('shop' + randInt(0, 3), cx - 1, cz + 7, Math.PI);
       placeTemplate('kiosk', cx + 9, cz + 6, -Math.PI / 2);
       placeTemplate('umbrella', cx + 9, cz + 0.5);
-      scatterPeople(4, 12);
+      placeTemplate('dumpster', cx - 10, cz + 11, rand(0, Math.PI));
+      placeTemplate('phonebox', cx + 12, cz - 10);
+      placeTemplate('bike', cx + 5, cz - 10, rand(0, Math.PI));
+      scatterPeople(6, 12);
     }
   } else if (d === 'industrial') {
     if (bx === 4 && bz === 4) {
       placeTemplate('factory', cx, cz - 4);
-      placeTemplate('pallets', cx - 8, cz + 8);
-      placeTemplate('crate', cx - 4, cz + 9);
+      placeTemplate('silo', cx + 9, cz + 7);
+      placeTemplate('watertower', cx - 9, cz + 8);
+      placeTemplate('pallets', cx - 3, cz + 9);
+      placeTemplate('crate', cx + 2, cz + 10);
     } else {
       placeTemplate('warehouse', cx - 1, cz - 5, bx % 2 ? 0 : Math.PI / 2);
-      if (Math.random() < 0.7) placeTemplate('tank', cx - 9, cz + 8);
+      const yard = Math.random();
+      if (yard < 0.4) placeTemplate('tank', cx - 9, cz + 8);
+      else if (yard < 0.75) { placeTemplate('silo', cx - 10, cz + 8); placeTemplate('silo', cx - 5.5, cz + 8); }
+      else placeTemplate('watertower', cx - 9, cz + 8);
       for (let i = 0; i < 2; i++) {
         placeTemplate('container' + randInt(0, 3), cx + 4 + i * 3.2, cz + 8, rand(-0.15, 0.15));
       }
       placeTemplate('pallets', cx + 10, cz + 2);
+      placeTemplate('dumpster', cx + 11, cz - 3, Math.PI / 2);
     }
-    scatterPeople(1, 12);
+    scatterPeople(2, 12);
   } else if (d === 'mixed') {
     placeTemplate('midrise' + randInt(0, 2), cx - 6.5, cz - 6, rand(-0.1, 0.1));
-    placeTemplate(Math.random() < 0.5 ? 'shop' + randInt(0, 3) : 'midrise' + randInt(0, 2), cx + 6.5, cz + 6, Math.PI);
+    const roll = Math.random();
+    if (roll < 0.35) placeTerrace(cx + 2, cz + 7, Math.PI);
+    else if (roll < 0.6) placeOfficeRow(cx + 2, cz + 7, 0);
+    else placeTemplate(Math.random() < 0.5 ? 'shop' + randInt(0, 3) : 'midrise' + randInt(0, 2), cx + 6.5, cz + 6, Math.PI);
     placeTemplate('tree', cx + 8, cz - 8);
-    placeTemplate('tree', cx - 8, cz + 8);
-    scatterPeople(3, 12);
+    placeTemplate('tree', cx - 8, cz - 6);
+    placeTemplate('planter', cx - 11, cz + 1);
+    scatterPeople(4, 12);
   } else if (d === 'stadium') {
     placeTemplate('goal', cx - 11.5, cz, Math.PI / 2);
     placeTemplate('goal', cx + 11.5, cz, Math.PI / 2);
@@ -1008,14 +1185,14 @@ function genBlock(bx, bz) {
     for (const [ox, oz] of [[-14, -14], [14, -14], [-14, 14], [14, 14]]) {
       placeTemplate('floodlight', cx + ox * 0.94, cz + oz * 0.94);
     }
-    scatterPeople(4, 10);
+    scatterPeople(6, 10);
   } else if (d === 'church') {
     placeTemplate('church', cx, cz - 4);
     for (let i = 0; i < 8; i++) {
       placeTemplate('grave', cx - 9 + (i % 4) * 2.2, cz + 8 + Math.floor(i / 4) * 2.6, rand(-0.2, 0.2));
     }
     placeTemplate('tree-big', cx + 9, cz + 8);
-    scatterPeople(1, 12);
+    scatterPeople(2, 12);
   } else if (d === 'park' || d === 'pondpark' || d === 'plaza') {
     genParkBlock(bx, bz, cx, cz, d);
   }
@@ -1042,7 +1219,11 @@ function genParkBlock(bx, bz, cx, cz, d) {
     placeTemplate('umbrella', cx + 8, cz - 8);
     placeTemplate('umbrella', cx + 9, cz + 7);
     placeTemplate('bench', cx - 8, cz + 8, -Math.PI / 4);
-    for (let i = 0; i < 8; i++) spawnPerson(cx + rand(-11, 11), cz + rand(-11, 11));
+    placeTemplate('clock', cx + 5, cz - 5);
+    placeTemplate('planter', cx - 5, cz - 8);
+    placeTemplate('planter', cx - 9, cz + 3);
+    placeTemplate('bike', cx + 4, cz + 9, rand(0, Math.PI));
+    for (let i = 0; i < 10; i++) spawnPerson(cx + rand(-11, 11), cz + rand(-11, 11));
     return;
   }
   if (d === 'pondpark') {
@@ -1053,20 +1234,28 @@ function genParkBlock(bx, bz, cx, cz, d) {
     }
     placeTemplate('bench', cx - 11, cz + 3, Math.PI / 2);
     placeTemplate('bench', cx + 11, cz - 3, -Math.PI / 2);
-    for (let i = 0; i < 4; i++) spawnPerson(cx + rand(9, 12) * (Math.random() < 0.5 ? 1 : -1), cz + rand(-12, 12));
+    placeTemplate('picnic', cx - 11, cz - 8, rand(0, Math.PI));
+    for (let i = 0; i < 6; i++) spawnPerson(cx + rand(9, 12) * (Math.random() < 0.5 ? 1 : -1), cz + rand(-12, 12));
     return;
   }
-  // regular park quarter: fountain or statue centrepiece
+  // regular park quarter: fountain centrepiece, or statue + playground
   placeTemplate(bx === 2 && bz === 2 ? 'fountain' : 'statue', cx, cz);
   for (let i = 0; i < 6; i++) {
     const a = (i / 6) * Math.PI * 2 + rand(-0.3, 0.3);
     placeTemplate(pick(['tree', 'tree-big', 'tree-pink']), cx + Math.cos(a) * rand(7, 12), cz + Math.sin(a) * rand(7, 12));
   }
   placeTemplate('flowerbed', cx + 5, cz - 5, rand(0, Math.PI));
-  placeTemplate('flowerbed', cx - 5, cz + 5, rand(0, Math.PI));
+  if (bx === 2 && bz === 3) {
+    placeTemplate('swing', cx - 6, cz + 6, rand(-0.3, 0.3));
+    placeTemplate('slide', cx - 3, cz + 8, rand(0, Math.PI * 2));
+    placeTemplate('picnic', cx + 7, cz + 6, rand(0, Math.PI));
+  } else {
+    placeTemplate('flowerbed', cx - 5, cz + 5, rand(0, Math.PI));
+    placeTemplate('picnic', cx + 6, cz + 7, rand(0, Math.PI));
+  }
   placeTemplate('bench', cx - 5, cz - 5, Math.PI / 4);
   placeTemplate('bench', cx + 5, cz + 5, Math.PI + Math.PI / 4);
-  for (let i = 0; i < 6; i++) spawnPerson(cx + rand(-11, 11), cz + rand(-11, 11));
+  for (let i = 0; i < 8; i++) spawnPerson(cx + rand(-11, 11), cz + rand(-11, 11));
 }
 
 function genPerimeter() {
@@ -1090,11 +1279,21 @@ function genPerimeter() {
       placeTemplate(Math.random() < 0.75 ? 'tree' : 'tree-big', x, z);
     }
   }
+  for (let i = 0; i < 8; i++) {
+    const side = randInt(0, 3);
+    const t = rand(-125, 125);
+    const off = rand(137, 144);
+    const [x, z] = side === 0 ? [t, -off] : side === 1 ? [t, off] : side === 2 ? [-off, t] : [off, t];
+    if (!ROADS.some((r) => Math.abs((side < 2 ? x : z) - r) < 7)) {
+      placeTemplate('picnic', x, z, rand(0, Math.PI * 2));
+      if (Math.random() < 0.6) spawnPerson(x + rand(-3, 3), z + rand(-3, 3));
+    }
+  }
 }
 
 function genTraffic() {
   // parked cars along road edges
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < 40; i++) {
     const road = pick(ROADS.slice(1, -1));
     const along = rand(-120, 120);
     if (ROADS.some((r) => Math.abs(along - r) < 8)) continue;
@@ -1104,7 +1303,7 @@ function genTraffic() {
     else spawnCar(kind, road + side * (ROAD_HALF - 1.3), along, rand(-0.05, 0.05), null);
   }
   // moving traffic
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 32; i++) {
     const axis = Math.random() < 0.5 ? 'x' : 'z';
     const road = pick(ROADS);
     const dir = Math.random() < 0.5 ? 1 : -1;
@@ -1115,6 +1314,15 @@ function genTraffic() {
     const [x, z] = axis === 'x' ? [start, lane] : [lane, start];
     const ry = axis === 'x' ? (dir > 0 ? Math.PI / 2 : -Math.PI / 2) : (dir > 0 ? 0 : Math.PI);
     spawnCar(kind, x, z, ry, { axis, dir, speed });
+  }
+  // roadwork cones scattered near the kerbs
+  for (let i = 0; i < 10; i++) {
+    const road = pick(ROADS);
+    const along = rand(-130, 130);
+    if (ROADS.some((r) => Math.abs(along - r) < 8)) continue;
+    const off = road + rand(-1, 1) * (ROAD_HALF - 1);
+    if (Math.random() < 0.5) placeTemplate('cone', along, off);
+    else placeTemplate('cone', off, along);
   }
   // traffic lights on a few intersections
   for (const rx of [-42, 42]) {
@@ -1202,9 +1410,11 @@ class Hole {
     this.isPlayer = isPlayer;
     this.pos = new THREE.Vector3();
     this.vel = new THREE.Vector3();
-    this.area = Math.PI * START_RADIUS * START_RADIUS;
+    this.level = 0;              // size only changes in whole-metre jumps
+    this.food = 0;               // eaten mass banked toward the next jump
+    this.vr = levelR(0);         // rendered radius, eases toward r on a jump
     this.score = 0;
-    this.maxR = START_RADIUS;
+    this.maxR = levelR(0);
     this.alive = true;
     this.dying = false;
     this.dyingT = 0;
@@ -1238,24 +1448,34 @@ class Hole {
     scene.add(this.pit, this.rim, this.glow, this.label.sprite);
   }
 
-  get r() { return Math.sqrt(this.area / Math.PI); }
-  setR(r) { this.area = Math.PI * r * r; }
+  get r() { return levelR(this.level); }
+  get area() { return Math.PI * this.r * this.r; }
+  setLevel(l) { this.level = clamp(Math.round(l), 0, MAX_LEVEL); this.food = 0; this.vr = this.r; }
+  setR(r) { this.setLevel(r * 2 - 3); }
+  foodNeed() { return Math.PI * (this.r + 0.25) * 0.85; } // mass to fill the next ring
   get depth() { return Math.min(4 + this.r * 2.1, 30); }
   get speed() { return (this.isPlayer ? 14 : 12.8) / (1 + this.r * 0.048); }
 
   visualR() {
-    let r = this.r;
+    let r = this.vr;
     if (this.dying) r *= Math.max(0, 1 - this.dyingT / 0.55);
     return r;
   }
 
   gain(growth, points) {
-    this.area += growth * (this.isPlayer ? 1 : 0.88);
     this.score += points;
-    this.maxR = Math.max(this.maxR, this.r);
+    this.food += growth * (this.isPlayer ? 1 : 0.88);
+    while (this.food >= this.foodNeed() && this.level < MAX_LEVEL) {
+      this.food -= this.foodNeed();
+      this.level++;
+      this.maxR = Math.max(this.maxR, this.r);
+      burst(this.pos.x, 0.5, this.pos.z, this.colorHex, 8, this.r * 0.8);
+      if (this.isPlayer) AudioFX.pop();
+    }
   }
 
-  updateMeshes(time) {
+  updateMeshes(time, dt) {
+    this.vr += (this.r - this.vr) * Math.min(1, 5 * dt);
     const r = this.visualR();
     const show = this.alive && r > 0.05;
     this.pit.visible = this.rim.visible = this.glow.visible = this.label.sprite.visible = show;
@@ -1273,7 +1493,7 @@ class Hole {
     const s = 1.1 + r * 0.3;
     this.label.sprite.position.set(this.pos.x, 2.4 + r * 0.55, this.pos.z);
     this.label.sprite.scale.set(s * 4.4, s * 1.1, 1);
-    this.label.set(`${this.name} · ${(r * 2).toFixed(1)}m`);
+    this.label.set(`${this.name} · ${3 + this.level}m`);
   }
 
   destroy() {
@@ -1339,7 +1559,7 @@ function updateParticles(dt) {
 const $ = (id) => document.getElementById(id);
 const hudScore = $('stat-score'), hudSize = $('stat-size'), hudTier = $('stat-tier'),
   hudLives = $('stat-lives'), hudTime = $('stat-time'), comboBadge = $('combo-badge'),
-  boardList = $('board-list'), cityEaten = $('city-eaten'),
+  boardList = $('board-list'), cityEaten = $('city-eaten'), sizeBar = $('size-bar'),
   toastBox = $('toasts'), minimap = $('minimap'), muteBtn = $('mute-btn');
 const minimapCtx = minimap.getContext('2d');
 
@@ -1485,12 +1705,6 @@ function startFall(p, hole) {
     combo.mult = combo.count >= 16 ? 4 : combo.count >= 9 ? 3 : combo.count >= 4 ? 2 : 1;
     hole.gain(p.growth, points * combo.mult);
     AudioFX.eat(p.eatR);
-    const tier = tierFor(hole.r);
-    if (tier !== playerTier) {
-      playerTier = tier;
-      toast(`You are now a ${tier.name}!`, '#00e5ff', true);
-      AudioFX.tier();
-    }
   } else {
     hole.gain(p.growth, points);
   }
@@ -1558,9 +1772,7 @@ function devourHole(big, small) {
   small.dying = true;
   small.dyingT = 0;
   small.killer = big;
-  big.area += small.area * 0.55;
-  big.score += 150 + Math.round(small.score * 0.25);
-  big.maxR = Math.max(big.maxR, big.r);
+  big.gain(small.area * 0.55 + small.food * 0.5, 150 + Math.round(small.score * 0.25));
   burst(big.pos.x, 0.6, big.pos.z, small.colorHex, 14, big.r * 0.8);
   if (small.isPlayer) {
     AudioFX.hurt();
@@ -1763,7 +1975,7 @@ function spawnMenuHoles() {
   npcs.forEach((n) => {
     const h = new Hole(n.name, n.color, false);
     h.pos.set(rand(-110, 110), 0, rand(-110, 110));
-    h.setR(rand(1.4, 3.2));
+    h.setLevel(randInt(0, 3));
     holes.push(h);
   });
 }
@@ -1801,7 +2013,7 @@ function endGame(reason, detail) {
     ? (rank === 1 ? 'The city is yours. Every other hole ate your dust.' : `The round is over — you finished ${rank}${suffix}.`)
     : `${detail} gulped you down and you're out of lives.`;
   $('final-score').textContent = player.score;
-  $('final-size').textContent = (player.maxR * 2).toFixed(1) + 'm';
+  $('final-size').textContent = Math.round(player.maxR * 2) + 'm';
   $('final-rank').textContent = rank + suffix;
   const best = Math.max(player.score, parseInt(localStorage.getItem('hole-best') || '0', 10));
   localStorage.setItem('hole-best', String(best));
@@ -1821,12 +2033,11 @@ function handlePlayerDeath() {
 }
 
 function respawnPlayer() {
-  const newR = Math.max(START_RADIUS, player.r * 0.55);
-  player.setR(newR);
+  player.setLevel(Math.floor(player.level * 0.5));
   player.dying = false;
   player.dyingT = 0;
   player.alive = true;
-  const s = safeSpot(newR);
+  const s = safeSpot(player.r);
   player.pos.set(s.x, 0, s.z);
   player.vel.set(0, 0, 0);
   player.invuln = 3.5;
@@ -1870,7 +2081,7 @@ function updateHoles(dt) {
       if (!h.isPlayer) {
         h.respawnT -= dt;
         if (h.respawnT <= 0) {
-          h.setR(START_RADIUS);
+          h.setLevel(0);
           const s = safeSpot(START_RADIUS);
           h.pos.set(s.x, 0, s.z);
           h.vel.set(0, 0, 0);
@@ -1902,7 +2113,7 @@ function updateCamera(dt, time) {
     camera.lookAt(0, 0, 0);
     return;
   }
-  const r = player ? player.r : START_RADIUS;
+  const r = player ? player.vr : START_RADIUS;
   camTarget.lerp(player.pos, Math.min(1, 4 * dt));
   const h = 17 + r * 4.6;
   const back = h * 0.62;
@@ -1949,7 +2160,7 @@ function animate() {
         if (!h.alive) {
           h.respawnT -= dt;
           if (h.respawnT <= 0) {
-            h.setR(START_RADIUS);
+            h.setLevel(0);
             h.pos.set(rand(-110, 110), 0, rand(-110, 110));
             h.alive = true;
           }
@@ -1965,7 +2176,7 @@ function animate() {
     updateCars(dt);
     for (const p of props) if (p.falling) updateFalling(p, dt);
     updateParticles(dt);
-    for (const h of holes) h.updateMeshes(time);
+    for (const h of holes) h.updateMeshes(time, dt);
     updateHoleUniforms();
   }
 
@@ -1973,8 +2184,17 @@ function animate() {
 
   // HUD
   if (state === 'play' && player) {
+    const tier = tierFor(player.r);
+    if (tier !== playerTier) {
+      if (TIERS.indexOf(tier) > TIERS.indexOf(playerTier)) {
+        toast(`You are now a ${tier.name}!`, '#00e5ff', true);
+        AudioFX.tier();
+      }
+      playerTier = tier;
+    }
     hudScore.textContent = player.score;
-    hudSize.textContent = (player.r * 2).toFixed(1) + 'm';
+    hudSize.textContent = (3 + player.level) + 'm';
+    sizeBar.style.width = Math.min(100, 100 * player.food / player.foodNeed()).toFixed(0) + '%';
     hudTier.textContent = playerTier.name;
     hudTime.textContent = fmtTime(roundTime);
     hudTime.classList.toggle('hud-value--warn', roundTime < 20);

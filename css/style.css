@@ -680,6 +680,56 @@ a.game-tile--hole:hover {
   border-color: rgba(0, 229, 255, 0.35);
 }
 
+/* ---- Sudoku preview ---- */
+.game-tile--sudoku .game-tile__preview {
+  background: linear-gradient(160deg, rgba(0, 229, 255, 0.07) 0%, rgba(168, 85, 247, 0.09) 100%);
+}
+
+.sudoku-preview {
+  display: grid;
+  grid-template-columns: repeat(3, 42px);
+  grid-template-rows: repeat(3, 42px);
+  gap: 3px;
+  padding: 5px;
+  border: 2px solid rgba(0, 229, 255, 0.4);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.12);
+}
+
+.sudoku-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sudoku-cell--dim {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* The blank square the player would fill — it lights up on hover. */
+.sudoku-cell--fill {
+  color: transparent;
+  background: rgba(0, 229, 255, 0.1);
+  transition: color 0.3s ease, background 0.3s ease, text-shadow 0.3s ease;
+}
+
+a.game-tile--sudoku:hover .sudoku-cell--fill {
+  color: var(--accent-cyan);
+  background: rgba(0, 229, 255, 0.22);
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.9);
+}
+
+a.game-tile--sudoku:hover {
+  border-color: rgba(0, 229, 255, 0.35);
+}
+
 .coming-soon-icon {
   font-size: 3rem;
   font-weight: 300;

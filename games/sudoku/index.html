@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6LNMJ1V5Q6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6LNMJ1V5Q6');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sudoku — WebGames</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../../css/flyout.css">
+</head>
+<body>
+  <aside class="flyout" id="flyout">
+    <div class="flyout__panel" role="region" aria-label="How to play Sudoku">
+      <span class="flyout__eyebrow">How to Play</span>
+      <h2>Sudoku</h2>
+      <p><strong>Sudoku</strong> is a number-placement puzzle on a 9×9 grid. Fill
+        every empty square so that each <strong>row</strong>, each
+        <strong>column</strong> and each of the nine <strong>3×3 boxes</strong>
+        contains the digits 1 to 9 exactly once.</p>
+      <p>The clues you start with are fixed. Every puzzle here is generated with
+        exactly one solution, so you never have to guess blindly — there is
+        always a logical next step.</p>
+
+      <div class="flyout__divider"></div>
+      <h3>Difficulty</h3>
+      <p>Each level caps how hard the reasoning can get, so a puzzle is never
+        tougher than the label promises. The <strong>Technique</strong> readout
+        shows the hardest step the grid in front of you actually needs.</p>
+      <ul class="flyout__tips">
+        <li><strong>Easy</strong> — around 40 clues, and every step is a single candidate.</li>
+        <li><strong>Medium</strong> — fewer clues; at worst you need locked candidates.</li>
+        <li><strong>Hard</strong> — at worst you need naked or hidden pairs, triples and quads.</li>
+        <li><strong>Expert</strong> — minimal clues, and reasoning beyond the standard patterns.</li>
+      </ul>
+
+      <div class="flyout__divider"></div>
+      <h3>Controls</h3>
+      <ul class="flyout__controls">
+        <li><span class="keys"><kbd>Click</kbd></span><span class="action">Select a square</span></li>
+        <li><span class="keys"><kbd>1</kbd>–<kbd>9</kbd></span><span class="action">Enter a digit (again to clear it)</span></li>
+        <li><span class="keys"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></span><span class="action">Move the selection</span></li>
+        <li><span class="keys"><kbd>⌫</kbd></span><span class="action">Erase the square</span></li>
+        <li><span class="keys"><kbd>N</kbd></span><span class="action">Toggle pencil marks</span></li>
+        <li><span class="keys"><kbd>U</kbd></span><span class="action">Undo</span></li>
+        <li><span class="keys"><kbd>H</kbd></span><span class="action">Reveal one square</span></li>
+      </ul>
+
+      <div class="flyout__divider"></div>
+      <h3>Tips</h3>
+      <ul class="flyout__tips">
+        <li>Scan for a digit that has only one legal home left in a row, column or box.</li>
+        <li>Use pencil marks to park the options for a square before committing.</li>
+        <li>Best times are only kept for grids solved with no mistakes and no hints.</li>
+      </ul>
+    </div>
+    <button class="flyout__tab" type="button" aria-controls="flyout" aria-expanded="false">
+      <span class="flyout__tab-icon">?</span>
+      <span class="flyout__tab-text">How to Play</span>
+    </button>
+  </aside>
+  <div class="flyout__scrim" id="flyout-scrim"></div>
+
+  <div class="game-layout">
+    <header class="game-header">
+      <a href="../../" class="back-link">← WebGames</a>
+      <h1>Sudoku</h1>
+
+      <div class="seg" id="diff-picker" role="group" aria-label="Difficulty">
+        <button class="seg__btn is-active" type="button" data-diff="easy">Easy</button>
+        <button class="seg__btn" type="button" data-diff="medium">Medium</button>
+        <button class="seg__btn" type="button" data-diff="hard">Hard</button>
+        <button class="seg__btn" type="button" data-diff="expert">Expert</button>
+      </div>
+
+      <button class="tool-btn tool-btn--primary" id="btn-new">New Puzzle</button>
+    </header>
+
+    <main class="game-container">
+      <div class="stat-bar">
+        <span class="stat"><span class="stat__label">Time</span><span class="stat__value" id="stat-time">0:00</span></span>
+        <span class="stat"><span class="stat__label">Empty</span><span class="stat__value" id="stat-left">81</span></span>
+        <span class="stat"><span class="stat__label">Mistakes</span><span class="stat__value" id="stat-mistakes">0</span></span>
+        <span class="stat"><span class="stat__label">Technique</span><span class="stat__value stat__value--text" id="stat-technique">…</span></span>
+      </div>
+
+      <div class="board-wrap">
+        <div class="board board--loading" id="board"></div>
+      </div>
+
+      <div class="pad">
+        <div class="pad__tools">
+          <button class="tool-btn" type="button" id="btn-undo">Undo</button>
+          <button class="tool-btn" type="button" id="btn-notes" aria-pressed="false">Notes</button>
+          <button class="tool-btn" type="button" id="btn-erase">Erase</button>
+          <button class="tool-btn" type="button" id="btn-hint">Hint</button>
+        </div>
+        <div class="numpad" id="numpad"></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="overlay overlay--hidden" id="end-overlay">
+    <div class="overlay-content">
+      <h2 id="end-title">Solved!</h2>
+      <p id="end-message"></p>
+      <div class="end-stats" id="end-stats"></div>
+      <button class="btn-start" id="btn-play-again">New Puzzle</button>
+    </div>
+  </div>
+
+  <script type="module" src="sudoku.js"></script>
+  <script src="../../css/flyout.js"></script>
+</body>
+</html>
